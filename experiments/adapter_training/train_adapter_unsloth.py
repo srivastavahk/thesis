@@ -1,21 +1,17 @@
 """
-Adapter Training — Lab RTX 6000 (24 GB VRAM, CUDA)
-====================================================
-Trains a domain-specific LoRA adapter on meta-llama/Llama-3.1-8B (bf16).
+Adapter Training with Unsloth — Lab RTX 6000 (24 GB VRAM, CUDA)
+================================================================
+Trains a domain-specific LoRA adapter on meta-llama/Llama-3.1-8B (bf16) using Unsloth.
 Run ONE domain at a time; all four domains are trained sequentially.
 
 Usage (run from project root ~/thesis/):
 -----------------------------------------
     export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx
 
-    PYTHONPATH=. python experiments/adapter_training/train_adapter.py --domain math
-    PYTHONPATH=. python experiments/adapter_training/train_adapter.py --domain coding
-    PYTHONPATH=. python experiments/adapter_training/train_adapter.py --domain finance
-    PYTHONPATH=. python experiments/adapter_training/train_adapter.py --domain medical
-
-    # Or in one shot with tmux (recommended):
-    # tmux new -s training
-    # Then paste all four lines sequentially.
+    PYTHONPATH=. python experiments/adapter_training/train_adapter_unsloth.py --domain math
+    PYTHONPATH=. python experiments/adapter_training/train_adapter_unsloth.py --domain coding
+    PYTHONPATH=. python experiments/adapter_training/train_adapter_unsloth.py --domain finance
+    PYTHONPATH=. python experiments/adapter_training/train_adapter_unsloth.py --domain medical
 
 Output per domain
 -----------------
@@ -115,24 +111,17 @@ DOMAIN_CONFIG = {
     },
 }
 
-BASE_MODEL = "meta-llama/Llama-3.1-8B"
+BASE_MODEL = "unsloth/Meta-Llama-3.1-8B"
 LORA_R = 16
-LORA_ALPHA = 32
-LORA_DROPOUT = 0.05
+LORA_ALPHA = 16
+LORA_DROPOUT = 0      # Unsloth is optimized for dropout = 0
 LORA_TARGET_MODULES = ["q_proj", "v_proj"]
 MAX_SEQ_LENGTH = 512
 MAX_STEPS = 3000
 LEARNING_RATE = 2e-4
 # Memory budget on RTX 6000 (24 GB):
-#   Model weights (8B, bf16)        : ~16.0 GB
-#   SDPA activations (batch=2)      :  ~1.5 GB
-#   paged_adamw_8bit (LoRA only)    :  ~0.2 GB
-#   Desktop GUI (Xorg/Firefox/etc.) :  ~0.7 GB
-#   Headroom                        :  ~5.6 GB
-# batch_size=2 keeps peak usage safely under 24 GB.
-# Effective batch = batch_size × grad_accum = 2 × 8 = 16 (unchanged).
 BATCH_SIZE = 2
-GRAD_ACCUM_STEPS = 8   # effective batch = 16 (same as before)
+GRAD_ACCUM_STEPS = 8   # effective batch = 16
 WARMUP_STEPS = 100
 
 
@@ -140,16 +129,22 @@ WARMUP_STEPS = 100
 # Helpers
 # ---------------------------------------------------------------------------
 
-def format_example(row: dict, domain: str) -> str:
-    """Convert a raw dataset row into the instruction/response template."""
+def format_messages(row: dict, domain: str) -> dict:
+    """Convert a raw dataset row into a chat messages list."""
     if domain == "medical":
         # Concatenate input + instruction for medical domain
         inp = (row.get("input", "") + " " + row.get("instruction", "")).strip()
     else:
         cfg = DOMAIN_CONFIG[domain]
         inp = row.get(cfg["input_field"], "")
+    
     out = row.get(DOMAIN_CONFIG[domain]["output_field"], "")
-    return f"### Instruction:\n{inp}\n\n### Response:\n{out}"
+    return {
+        "messages": [
+            {"role": "user", "content": inp},
+            {"role": "assistant", "content": out}
+        ]
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -157,19 +152,21 @@ def format_example(row: dict, domain: str) -> str:
 # ---------------------------------------------------------------------------
 
 def train(domain: str):
+    import gc
     from datasets import load_dataset
-    from peft import LoraConfig, get_peft_model
-    from transformers import (
-        AutoModelForCausalLM,
-        AutoTokenizer,
-        DataCollatorForSeq2Seq,
-        TrainingArguments,
-        Trainer,
-    )
+    from transformers import DataCollatorForSeq2Seq
+    from trl import SFTTrainer, SFTConfig
+    from unsloth import FastLanguageModel
+    from unsloth.chat_templates import get_chat_template, train_on_responses_only
+
+    # Explicitly clear CUDA memory before starting
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
 
     cfg = DOMAIN_CONFIG[domain]
     log.info("=" * 60)
-    log.info("Training adapter: domain=%s", domain)
+    log.info("Training adapter (Unsloth): domain=%s", domain)
     log.info("  base_model  : %s", BASE_MODEL)
     log.info("  dataset     : %s", cfg["dataset"])
     log.info("  n_samples   : %d", cfg["n_samples"])
@@ -183,60 +180,44 @@ def train(domain: str):
     os.makedirs(checkpoint_dir, exist_ok=True)
 
     # ------------------------------------------------------------------
-    # 1. Load tokenizer
+    # 1. Load base model and tokenizer via Unsloth
     # ------------------------------------------------------------------
-    log.info("Loading tokenizer ...")
-    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+    log.info("Loading base model (Unsloth) ...")
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name = BASE_MODEL,
+        max_seq_length = MAX_SEQ_LENGTH,
+        dtype = torch.bfloat16,
+        load_in_4bit = False,  # we are doing bf16 LoRA
+    )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    # ------------------------------------------------------------------
-    # 2. Load base model in bf16
-    #    Attention implementation priority:
-    #      1. flash_attention_2  — fastest, needs flash-attn package + matching nvcc
-    #      2. sdpa               — PyTorch built-in fused attention (torch >= 2.0), no extra
-    #                              package needed, works on any CUDA version including cu130.
-    #                              Uses the same memory-efficient kernel as FA2 on Ampere/Ada.
-    #      3. eager              — standard unfused attention (slowest, fallback of last resort)
-    # ------------------------------------------------------------------
-    log.info("Loading base model (this may take a few minutes) ...")
-
-    for attn_impl in ("flash_attention_2", "sdpa", "eager"):
-        try:
-            model = AutoModelForCausalLM.from_pretrained(
-                BASE_MODEL,
-                torch_dtype=torch.bfloat16,
-                device_map="cuda",
-                attn_implementation=attn_impl,
-            )
-            log.info("Attention implementation: %s", attn_impl)
-            break
-        except (ValueError, ImportError, RuntimeError) as e:
-            log.warning("attn_implementation='%s' unavailable (%s), trying next ...", attn_impl, e)
-    else:
-        raise RuntimeError("Could not load model with any attention implementation. Check your CUDA setup.")
-
-    # use_cache must be False when gradient_checkpointing is enabled
-    # (caching past key-values is incompatible with recomputation)
-    model.config.use_cache = False
-
-    # ------------------------------------------------------------------
-    # 3. Apply LoRA
-    # ------------------------------------------------------------------
-    log.info("Applying LoRA ...")
-    lora_config = LoraConfig(
-        r=LORA_R,
-        lora_alpha=LORA_ALPHA,
-        lora_dropout=LORA_DROPOUT,
-        target_modules=LORA_TARGET_MODULES,
-        bias="none",
-        task_type="CAUSAL_LM",
+    # Apply official Llama-3.1 chat template
+    tokenizer = get_chat_template(
+        tokenizer,
+        chat_template="llama-3.1",
     )
-    model = get_peft_model(model, lora_config)
+    
+    # ------------------------------------------------------------------
+    # 2. Apply LoRA via Unsloth
+    # ------------------------------------------------------------------
+    log.info("Applying LoRA (Unsloth) ...")
+    model = FastLanguageModel.get_peft_model(
+        model,
+        r = LORA_R,
+        target_modules = LORA_TARGET_MODULES,
+        lora_alpha = LORA_ALPHA,
+        lora_dropout = LORA_DROPOUT,
+        bias = "none",
+        use_gradient_checkpointing = "unsloth", # Use Unsloth's optimized VRAM efficient checkpointing
+        random_state = SEED,
+        use_rslora = False,
+        loftq_config = None,
+    )
     model.print_trainable_parameters()
 
     # ------------------------------------------------------------------
-    # 4. Load and prepare dataset
+    # 3. Load and prepare dataset
     # ------------------------------------------------------------------
     log.info("Loading dataset: %s ...", cfg["dataset"])
     raw_dataset = load_dataset(cfg["dataset"], split=cfg["split"])
@@ -246,26 +227,27 @@ def train(domain: str):
     raw_dataset = raw_dataset.shuffle(seed=SEED).select(range(n))
     log.info("Dataset size after sampling: %d", len(raw_dataset))
 
-    # Format and tokenize
-    def tokenize(batch):
-        texts = [format_example(row, domain) for row in
-                 [{k: batch[k][i] for k in batch} for i in range(len(batch[list(batch.keys())[0]]))]]
-        tokenized = tokenizer(
-            texts,
-            max_length=MAX_SEQ_LENGTH,
-            truncation=True,
-            padding=False,
+    # Format to chat messages and apply template
+    def format_chat(batch):
+        # Convert batched dict of columns to list of row dicts
+        rows = [{k: batch[k][i] for k in batch} for i in range(len(batch[list(batch.keys())[0]]))]
+        messages_list = [format_messages(row, domain)["messages"] for row in rows]
+        
+        # Apply chat template
+        texts = tokenizer.apply_chat_template(
+            messages_list,
+            tokenize=False,
+            add_generation_prompt=False,
         )
-        tokenized["labels"] = tokenized["input_ids"].copy()
-        return tokenized
+        return {"text": texts}
 
-    log.info("Tokenizing dataset ...")
+    log.info("Applying chat templates ...")
     tokenized_dataset = raw_dataset.map(
-        tokenize,
+        format_chat,
         batched=True,
         batch_size=256,
         remove_columns=raw_dataset.column_names,
-        desc="Tokenizing",
+        desc="Formatting chat",
     )
 
     data_collator = DataCollatorForSeq2Seq(
@@ -277,9 +259,9 @@ def train(domain: str):
     )
 
     # ------------------------------------------------------------------
-    # 5. Training arguments
+    # 4. Training arguments (SFTTrainer)
     # ------------------------------------------------------------------
-    training_args = TrainingArguments(
+    training_args = SFTConfig(
         output_dir=checkpoint_dir,
         max_steps=MAX_STEPS,
         per_device_train_batch_size=BATCH_SIZE,
@@ -289,15 +271,6 @@ def train(domain: str):
         warmup_steps=WARMUP_STEPS,
         optim="paged_adamw_8bit",          # saves ~2 GB VRAM vs. adamw_torch
         bf16=True,
-        # gradient_checkpointing IS needed for LoRA on this hardware:
-        #   LoRA gradients must backpropagate through all 32 frozen layers to
-        #   reach LoRA matrices in early layers. Without checkpointing, ALL
-        #   intermediate activations are pinned in VRAM simultaneously (~3-4 GB
-        #   extra for Llama-3.1-8B at seq_len=512). With checkpointing, only
-        #   checkpoint boundary activations are retained; others are recomputed
-        #   on-demand, keeping peak VRAM within the 24 GB budget.
-        #   Cost: ~20-25% extra compute. Benefit: ~3-4 GB VRAM saved.
-        gradient_checkpointing=True,
         logging_steps=50,
         save_steps=1000,
         save_total_limit=3,
@@ -305,14 +278,14 @@ def train(domain: str):
         dataloader_pin_memory=True,
         report_to="none",
         seed=SEED,
+        dataset_text_field="text",
+        max_seq_length=MAX_SEQ_LENGTH,
+        packing=False,
     )
 
     # ------------------------------------------------------------------
-    # 6. Train (auto-resumes from latest checkpoint if one exists)
+    # 5. Train (auto-resumes from latest checkpoint if one exists)
     # ------------------------------------------------------------------
-    # Detect whether a checkpoint already exists in the output directory.
-    # If it does, Trainer will resume from the latest step automatically.
-    # This means cancelling and re-running is always safe — no progress is lost.
     import glob
     existing_checkpoints = sorted(glob.glob(os.path.join(checkpoint_dir, "checkpoint-*")))
     resume_from_checkpoint = bool(existing_checkpoints)
@@ -324,11 +297,19 @@ def train(domain: str):
 
     t0 = time.perf_counter()
 
-    trainer = Trainer(
+    trainer = SFTTrainer(
         model=model,
-        args=training_args,
+        tokenizer=tokenizer,
         train_dataset=tokenized_dataset,
         data_collator=data_collator,
+        args=training_args,
+    )
+
+    # Optimize learning: mask the instruction so the loss is only calculated on the assistant's response.
+    trainer = train_on_responses_only(
+        trainer,
+        instruction_part="<|start_header_id|>user<|end_header_id|>\n\n",
+        response_part="<|start_header_id|>assistant<|end_header_id|>\n\n",
     )
 
     train_result = trainer.train(resume_from_checkpoint=resume_from_checkpoint)
@@ -339,7 +320,7 @@ def train(domain: str):
     log.info("Final training loss: %.4f", final_loss)
 
     # ------------------------------------------------------------------
-    # 7. Save adapter locally first (safe fallback)
+    # 6. Save adapter locally first (safe fallback)
     # ------------------------------------------------------------------
     log.info("Saving adapter locally to %s ...", output_adapter_dir)
     model.save_pretrained(output_adapter_dir)
@@ -347,13 +328,7 @@ def train(domain: str):
     log.info("Local save complete.")
 
     # ------------------------------------------------------------------
-    # 8. Push adapter to HuggingFace Hub
-    #
-    #    Repo name format: {HF_USERNAME}/{base_model_name}_{domain}
-    #    e.g. mml2024003/Llama-3.1-8B_math
-    #
-    #    The base model name is the last component of BASE_MODEL
-    #    (strips the org prefix, e.g. "meta-llama/Llama-3.1-8B" → "Llama-3.1-8B").
+    # 7. Push adapter to HuggingFace Hub
     # ------------------------------------------------------------------
     base_model_name = BASE_MODEL.split("/")[-1]          # "Llama-3.1-8B"
     hub_repo_id     = f"{HF_USERNAME}/{base_model_name}_{domain}"  # "mml2024003/Llama-3.1-8B_math"
@@ -363,11 +338,13 @@ def train(domain: str):
         model.push_to_hub(
             hub_repo_id,
             private=HF_REPO_PRIVATE,
-            commit_message=f"Add {domain} LoRA adapter ({MAX_STEPS} steps, bf16, r={LORA_R})",
+            token=os.environ.get("HF_TOKEN"),
+            commit_message=f"Add {domain} LoRA adapter (Unsloth, {MAX_STEPS} steps, bf16, r={LORA_R})",
         )
         tokenizer.push_to_hub(
             hub_repo_id,
             private=HF_REPO_PRIVATE,
+            token=os.environ.get("HF_TOKEN"),
             commit_message="Add tokenizer",
         )
         hub_url = f"https://huggingface.co/{hub_repo_id}"
@@ -382,7 +359,7 @@ def train(domain: str):
         hub_url = None
 
     # ------------------------------------------------------------------
-    # 9. Save metadata JSON (local + upload to Hub)
+    # 8. Save metadata JSON (local + upload to Hub)
     # ------------------------------------------------------------------
     meta = {
         "domain": domain,
@@ -399,13 +376,13 @@ def train(domain: str):
         "final_train_loss": round(final_loss, 6),
         "training_time_minutes": round(elapsed / 60, 1),
         "seed": SEED,
+        "unsloth": True,
     }
     meta_path = os.path.join(output_adapter_dir, "adapter_meta.json")
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
     log.info("Metadata saved to %s", meta_path)
 
-    # Also upload the metadata file to the Hub repo
     if hub_url is not None:
         try:
             from huggingface_hub import upload_file
@@ -414,12 +391,20 @@ def train(domain: str):
                 path_in_repo="adapter_meta.json",
                 repo_id=hub_repo_id,
                 commit_message="Add adapter metadata JSON",
+                token=os.environ.get("HF_TOKEN"),
             )
             log.info("adapter_meta.json uploaded to Hub.")
         except Exception as exc:
             log.warning("Could not upload adapter_meta.json to Hub: %s", exc)
 
     log.info("Done. Adapter for domain='%s' available at: %s", domain, hub_url or output_adapter_dir)
+
+    # Clean up memory after training finishes
+    del model
+    del trainer
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
 
 
 # ---------------------------------------------------------------------------
@@ -428,7 +413,7 @@ def train(domain: str):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Train a domain-specific LoRA adapter on Llama-3.1-8B."
+        description="Train a domain-specific LoRA adapter on Llama-3.1-8B using Unsloth."
     )
     parser.add_argument(
         "--domain",
