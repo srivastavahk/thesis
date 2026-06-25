@@ -291,9 +291,20 @@ def train(domain: str):
     )
 
     # ------------------------------------------------------------------
-    # 6. Train
+    # 6. Train (auto-resumes from latest checkpoint if one exists)
     # ------------------------------------------------------------------
-    log.info("Starting training ...")
+    # Detect whether a checkpoint already exists in the output directory.
+    # If it does, Trainer will resume from the latest step automatically.
+    # This means cancelling and re-running is always safe — no progress is lost.
+    import glob
+    existing_checkpoints = sorted(glob.glob(os.path.join(checkpoint_dir, "checkpoint-*")))
+    resume_from_checkpoint = bool(existing_checkpoints)
+    if resume_from_checkpoint:
+        latest_ckpt = existing_checkpoints[-1]
+        log.info("Resuming training from checkpoint: %s", latest_ckpt)
+    else:
+        log.info("No checkpoint found — starting training from step 0.")
+
     t0 = time.perf_counter()
 
     trainer = Trainer(
@@ -303,7 +314,7 @@ def train(domain: str):
         data_collator=data_collator,
     )
 
-    train_result = trainer.train()
+    train_result = trainer.train(resume_from_checkpoint=resume_from_checkpoint)
     elapsed = time.perf_counter() - t0
     log.info("Training complete in %.1f minutes.", elapsed / 60)
 

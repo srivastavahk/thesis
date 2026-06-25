@@ -8,6 +8,12 @@
 #   export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx          # WRITE-scope token required
 #   bash experiments/adapter_training/run_all_domains.sh
 #
+# Safe to re-run after a cancel:
+#   - Domains with a completed adapter (adapters/{domain}/adapter_model.safetensors)
+#     are SKIPPED automatically.
+#   - Domains with only partial checkpoints (checkpoints/{domain}/checkpoint-N/)
+#     are RESUMED from the latest checkpoint automatically.
+#
 # Recommended: run inside tmux so SSH disconnects don't kill the job.
 #   tmux new -s training
 #   export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx
@@ -94,19 +100,50 @@ declare -A DOMAIN_ELAPSED
 run_domain() {
     local domain="$1"
     local log_file="${LOG_DIR}/train_${domain}.log"
+    local adapter_file="${PROJECT_ROOT}/adapters/${domain}/adapter_model.safetensors"
     local start_ts
     start_ts=$(date +%s)
 
+    # ------------------------------------------------------------------
+    # Skip if adapter already exists (fully completed domain)
+    # ------------------------------------------------------------------
+    if [[ -f "${adapter_file}" ]]; then
+        echo "------------------------------------------------------------"
+        echo "  SKIPPING domain: ${domain}"
+        echo "  Adapter already exists: ${adapter_file}"
+        echo "  Delete it to force a re-run."
+        echo "------------------------------------------------------------"
+        DOMAIN_STATUS["${domain}"]="SKIPPED"
+        DOMAIN_ELAPSED["${domain}"]="0m 0s"
+        return 0
+    fi
+
+    # ------------------------------------------------------------------
+    # Check for partial checkpoint (resume case)
+    # ------------------------------------------------------------------
+    local checkpoint_dir="${PROJECT_ROOT}/checkpoints/${domain}"
+    local latest_ckpt
+    latest_ckpt=$(ls -d "${checkpoint_dir}/checkpoint-"* 2>/dev/null | sort -t- -k2 -n | tail -1 || true)
+
     echo "------------------------------------------------------------"
-    echo "  Starting domain: ${domain}"
-    echo "  Log: ${log_file}"
+    if [[ -n "${latest_ckpt}" ]]; then
+        echo "  RESUMING domain: ${domain}"
+        echo "  From checkpoint: ${latest_ckpt}"
+    else
+        echo "  Starting domain: ${domain} (from step 0)"
+    fi
+    echo "  Log: ${log_file}  (appending)"
     echo "  Time: $(date '+%Y-%m-%d %H:%M:%S')"
     echo "------------------------------------------------------------"
 
-    # Run training; tee mirrors output to both terminal and log file
+    # Append to existing log (preserves history from cancelled run)
+    echo "" >> "${log_file}"
+    echo "=== Run started at $(date '+%Y-%m-%d %H:%M:%S') ==" >> "${log_file}"
+
+    # Run training; tee appends to log file
     if PYTHONPATH="${PROJECT_ROOT}" python3 "${TRAIN_SCRIPT}" \
             --domain "${domain}" \
-            2>&1 | tee "${log_file}"; then
+            2>&1 | tee -a "${log_file}"; then
         DOMAIN_STATUS["${domain}"]="SUCCESS"
     else
         DOMAIN_STATUS["${domain}"]="FAILED"
