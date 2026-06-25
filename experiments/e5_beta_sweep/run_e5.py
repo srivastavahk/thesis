@@ -174,19 +174,20 @@ def main():
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     log.info("Loading base model ...")
-    try:
-        model = AutoModelForCausalLM.from_pretrained(
-            args.base_model,
-            torch_dtype=model_dtype,
-            device_map=args.device,
-            attn_implementation="flash_attention_2",
-        )
-    except (ValueError, ImportError):
-        model = AutoModelForCausalLM.from_pretrained(
-            args.base_model,
-            torch_dtype=model_dtype,
-            device_map=args.device,
-        )
+    for attn_impl in ("flash_attention_2", "sdpa", "eager"):
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                args.base_model,
+                torch_dtype=model_dtype,
+                device_map=args.device,
+                attn_implementation=attn_impl,
+            )
+            log.info("Attention implementation: %s", attn_impl)
+            break
+        except (ValueError, ImportError, RuntimeError) as e:
+            log.warning("attn_implementation='%s' unavailable (%s), trying next ...", attn_impl, e)
+    else:
+        raise RuntimeError("Could not load model with any attention implementation.")
     model.eval()
     tokenizer = AutoTokenizer.from_pretrained(args.base_model)
     if tokenizer.pad_token is None:

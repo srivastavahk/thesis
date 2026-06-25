@@ -180,28 +180,30 @@ def train(domain: str):
         tokenizer.pad_token = tokenizer.eos_token
 
     # ------------------------------------------------------------------
-    # 2. Load base model in bf16 with FlashAttention-2 if available
+    # 2. Load base model in bf16
+    #    Attention implementation priority:
+    #      1. flash_attention_2  — fastest, needs flash-attn package + matching nvcc
+    #      2. sdpa               — PyTorch built-in fused attention (torch >= 2.0), no extra
+    #                              package needed, works on any CUDA version including cu130.
+    #                              Uses the same memory-efficient kernel as FA2 on Ampere/Ada.
+    #      3. eager              — standard unfused attention (slowest, fallback of last resort)
     # ------------------------------------------------------------------
     log.info("Loading base model (this may take a few minutes) ...")
-    try:
-        model = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL,
-            torch_dtype=torch.bfloat16,
-            device_map="cuda",
-            attn_implementation="flash_attention_2",
-        )
-        log.info("FlashAttention-2 enabled.")
-    except (ValueError, ImportError, RuntimeError) as e:
-        log.warning("FlashAttention-2 not available (%s). Falling back to standard attention.", e)
-        log.warning(
-            "PERFORMANCE NOTE: Without FlashAttention-2, training will take ~7-8h per domain "
-            "instead of ~3-4h. Install it with: pip install flash-attn --no-build-isolation"
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL,
-            torch_dtype=torch.bfloat16,
-            device_map="cuda",
-        )
+
+    for attn_impl in ("flash_attention_2", "sdpa", "eager"):
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                BASE_MODEL,
+                torch_dtype=torch.bfloat16,
+                device_map="cuda",
+                attn_implementation=attn_impl,
+            )
+            log.info("Attention implementation: %s", attn_impl)
+            break
+        except (ValueError, ImportError, RuntimeError) as e:
+            log.warning("attn_implementation='%s' unavailable (%s), trying next ...", attn_impl, e)
+    else:
+        raise RuntimeError("Could not load model with any attention implementation. Check your CUDA setup.")
 
     # use_cache=True is fine for LoRA — gradient checkpointing is NOT used
     # (see training args below for rationale)
