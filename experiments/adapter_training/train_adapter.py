@@ -46,6 +46,9 @@ import torch
 SEED = 42
 torch.manual_seed(SEED)
 os.environ["PYTHONHASHSEED"] = str(SEED)
+# Fix CUDA allocator fragmentation — prevents OOM when reserved-but-unallocated
+# memory blocks are large but none is contiguous enough for a new allocation.
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 # ---------------------------------------------------------------------------
 # HuggingFace Hub push configuration
@@ -120,8 +123,16 @@ LORA_TARGET_MODULES = ["q_proj", "v_proj"]
 MAX_SEQ_LENGTH = 512
 MAX_STEPS = 3000
 LEARNING_RATE = 2e-4
-BATCH_SIZE = 4
-GRAD_ACCUM_STEPS = 4   # effective batch = 16
+# Memory budget on RTX 6000 (24 GB):
+#   Model weights (8B, bf16)        : ~16.0 GB
+#   SDPA activations (batch=2)      :  ~1.5 GB
+#   paged_adamw_8bit (LoRA only)    :  ~0.2 GB
+#   Desktop GUI (Xorg/Firefox/etc.) :  ~0.7 GB
+#   Headroom                        :  ~5.6 GB
+# batch_size=2 keeps peak usage safely under 24 GB.
+# Effective batch = batch_size × grad_accum = 2 × 8 = 16 (unchanged).
+BATCH_SIZE = 2
+GRAD_ACCUM_STEPS = 8   # effective batch = 16 (same as before)
 WARMUP_STEPS = 100
 
 
