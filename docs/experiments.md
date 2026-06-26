@@ -123,18 +123,14 @@ naive-inversion alternative, not a better asymptotic exponent than Pico's SVD.
 
 ## E4. Scaling vs. $T$ and rank $r$
 
-**Objective.** Confirm equivalence and speed hold as the merge pool grows and rank increases — the
+**Objective.** Confirm speed hold as the merge pool grows and rank increases — the
 regime where Pico's SVD cost bites hardest.
 
-**Setup.** Two sub-parts:
+**Setup.**
 - **Timing-only (cheap, synthetic):** sweep $T \in \{2,\dots,6\}$ and $r \in \{8,16,32,64\}$
-  independently, re-running E1's equivalence check and E3's timing at each point. No new adapters
-  needed.
-- **Accuracy-side (optional, reuses E2's adapters):** if you only trained 4 domain adapters in E2,
-  cap the progressive-merge accuracy curve at $T=4$ — don't train extra adapters solely for this;
-  it's not worth the cost for a curve that's secondary to the timing result.
+  independently, re-running E3's timing at each point. No new adapters needed.
 
-**Expected result.** Equivalence holds at every grid point. The Pico–WBP timing gap widens as $Tr$
+**Expected result.** The Pico–WBP timing gap widens as $Tr$
 grows (more singular values for SVD to resolve iteratively vs. WBP's $Tr\times Tr$ inversion, which
 stays cheap relative to $d_{out}$).
 

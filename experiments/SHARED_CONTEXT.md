@@ -140,15 +140,16 @@ Every result file must include:
 
 ## Master / Sub-Agent Ledger
 
-> **ATTENTION SUB-AGENTS:** You are responsible for a specific experiment (E0-E5). When you achieve a milestone, encounter an error, or finish your execution, you MUST update your corresponding section below. The Master Agent will read this to track global progress and write the thesis. Do not modify other agents' sections.
+> **ATTENTION SUB-AGENTS:** You are responsible for a specific experiment (E0-E5). When you achieve a milestone, encounter an error, or finish your execution, you MUST update your corresponding section below. 
+> **CRITICAL:** If you change ANY parameters during execution (e.g., datasets, domains, rank, metrics), you MUST immediately update `docs/fact-file.md` to ensure it remains the single source of truth for the Master Agent. Do not modify other agents' sections in this ledger.
 
 ### E0 Status
 - **Status:** Pending Execution
 - **Notes:** (Sub-agent to update)
 
 ### E1 Status
-- **Status:** Pending Execution
-- **Notes:** (Sub-agent to update)
+- **Status:** Script Ready, Pending Lab PC Execution
+- **Notes:** `experiments/e1_equivalence/run_e1.py` is fully implemented. Waiting for user to execute it on the Lab PC (where adapters are present) to verify operator-level equivalence.
 
 ### E2 Status
 - **Status:** Pending Execution
@@ -159,9 +160,9 @@ Every result file must include:
 - **Notes:** `experiments/e3_scaling/run_e3.py` is fully implemented. Waiting for user to execute it on the Lab PC (RTX 6000) and provide the results.
 
 ### E4 Status
-- **Status:** Scripts Implemented, Equivalence verification running, Pending Lab PC Execution for Timing
-- **Notes:** `experiments/e4_tr_scaling/run_e4_equivalence.py` and `experiments/e4_tr_scaling/run_e4_timing.py` are fully implemented. Need user to execute the timing script on the Lab RTX 6000.
+- **Status:** Script Ready, Pending Lab PC Execution
+- **Notes:** `experiments/e4_tr_scaling/run_e4_timing.py` is fully implemented. Need user to execute the timing script on the Lab RTX 6000.
 
 ### E5 Status
-- **Status:** Pending Execution
-- **Notes:** (Sub-agent to update)
+- **Status:** Script Ready, Pending Lab PC Execution
+- **Notes:** `experiments/e5_beta_sweep/run_e5.py` is fully implemented. Waiting for user to execute it on the Lab PC (RTX 6000) and provide the results.

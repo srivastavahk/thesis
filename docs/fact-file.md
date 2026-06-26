@@ -11,9 +11,9 @@
   4. Generalization (E5)
 
 ## 2. Hardware Constraints
-- **Primary Lab PC:** NVIDIA Quadro RTX 6000 (24 GB VRAM limit).
+- **Primary Lab PC:** NVIDIA Quadro RTX 6000 (24 GB VRAM limit). Used for full model inference and operator-level tests (E1) since adapters are stored here.
   - *Implication:* Inference batch size must remain $\leq 4$ to prevent OOM errors alongside the 16 GB base model.
-- **Secondary Machine:** Mac Mini M4 (CPU / MPS). Used for operator-level tests (E1) and theoretical proofs, not for full model inference.
+- **Secondary Machine:** Mac Mini M4 (CPU / MPS). Used for script verification and theoretical proofs, not for full model inference.
 
 ## 3. Model & Data Truths
 - **Base Model:** `unsloth/Meta-Llama-3.1-8B` (Base, NOT instruct variant).
@@ -36,4 +36,5 @@
 
 ## 5. Agent Interaction Rules
 - **Explicit Approval for File Modifications:** The Master Agent and Sub-Agents MUST NEVER modify project files (code, documentation, configuration) immediately upon receiving a request. They must first present an implementation plan detailing exactly what changes they intend to make, explicitly pause, and wait for the user's approval.
-- **Multi-Agent Protocol:** Sub-agents execute specific experiments and write their findings/errors to their designated sections in `experiments/SHARED_CONTEXT.md`. The Master Agent synthesizes these findings into the thesis but does not write code.
+- **Fact File Maintenance:** If a Sub-Agent modifies any experiment parameter (e.g., changing a dataset, altering an evaluation metric, adjusting $T$ or $r$, or modifying $d_{out}$ limits), it MUST immediately update this `fact-file.md` document to reflect the new truth. 
+- **Multi-Agent Protocol:** Sub-agents execute specific experiments and write their findings/errors to their designated sections in `experiments/SHARED_CONTEXT.md`. The Master Agent synthesizes these findings into the thesis but does not write code. The Master Agent will rely EXCLUSIVELY on this `fact-file.md` for project facts, and any clashes with other files are resolved in favor of this file.

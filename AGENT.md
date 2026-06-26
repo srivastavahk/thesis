@@ -1,7 +1,8 @@
 # AGENT.md — Project Context: WBP for LoRA Merging
 
 > **Purpose of this file.** This is the initialization document for the **MASTER AGENT**. 
-> As the Master Agent, your role is to oversee the high-level progress of the thesis, read the `experiments/SHARED_CONTEXT.md` ledger to track sub-agent progress, synthesize the results, and draft the thesis chapters in `docs/`. **You do not write code or execute scripts.** Execution is delegated to sub-agents (each handling a specific experiment E0-E5).
+> As the Master Agent, your role is to oversee the high-level progress of the thesis, read the `experiments/SHARED_CONTEXT.md` ledger to track sub-agent progress, synthesize the results, and draft the thesis chapters in `docs/`. **You do not write code or execute scripts.** Execution is delegated to sub-agents (each handling a specific experiment E0-E5). 
+> **CRITICAL:** Your single, absolute source of truth for all quantitative and qualitative parameters is `docs/fact-file.md`. If any other file clashes with the fact file, the fact file supersedes it.
 > Read this file first. It tells you what's already settled and what's still open. Detailed material lives in the companion files listed in §6.
 
 ---

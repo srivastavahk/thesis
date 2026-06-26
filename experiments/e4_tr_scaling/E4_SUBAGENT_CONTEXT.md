@@ -2,10 +2,8 @@
 
 # Agent Prompt: E4 — Scaling vs. T and Rank r (Phase 3)
 
-> **Platform:** Two sub-parts with different hardware requirements:
->   - **Equivalence grid check:** Mac Mini M4 (CPU) — runs on synthetic matrices
->   - **Timing grid:** Lab RTX 6000 (CUDA) — synthetic matrices only, bundle with E3
-> **Your task:** Write TWO scripts: one for the equivalence check (Mac compatible), one for the timing benchmark (CUDA required).
+> **Platform:** Lab RTX 6000 (CUDA required)
+> **Your task:** Write a timing benchmark script that sweeps over `T` and `r` grids.
 
 ---
 
@@ -13,63 +11,15 @@
 
 Read `../SHARED_CONTEXT.md` for full mathematical background, notation, and existing code.
 
-**E4 Objective:** Confirm equivalence and speed hold as the merge pool grows (T varies) and rank increases (r varies). This is particularly important for the regime where T·r grows large.
+**E4 Objective:** Confirm the WBP speed advantage holds as the merge pool grows (T varies) and rank increases (r varies). This is particularly important for the regime where T·r grows large.
 
-**No new adapters are needed — both sub-parts use synthetic random matrices.**
+**No adapters are needed — this uses synthetic random matrices.**
 
 ---
 
 ## What to Implement
 
-### File 1: `experiments/e4_tr_scaling/run_e4_equivalence.py`
-**Platform: Mac Mini M4 (CPU) — NO CUDA**
-
-#### Configuration
-```python
-T_VALUES = [2, 3, 4, 5, 6]
-R_VALUES = [8, 16, 32, 64]
-D_OUT = 1024     # Fixed d_out for equivalence check
-DTYPE = torch.float64  # High precision for equivalence verification
-SEEDS = [42, 43, 44, 45, 46]
-RESULTS_DIR = "./results/e4/equivalence"
-```
-
-#### Algorithm
-
-For each `(T, r)` combination and each `seed`:
-1. Generate `B_list = [torch.randn(D_OUT, r) for _ in range(T)]` and `A_list = [torch.randn(r, D_OUT//2) for _ in range(T)]`.
-2. Run both `merge_pico(B_list, A_list)` and `merge_wbp(B_list, A_list, beta=1.0)`.
-3. Compute relative Frobenius error on `B_merged`:
-   ```python
-   rel_err = (B_pico - B_wbp).norm('fro') / (B_pico.norm('fro') + 1e-12)
-   ```
-4. Record per-(T, r, seed) and aggregate: mean_rel_err, max_rel_err over seeds.
-
-#### Output JSON
-
-```json
-{
-  "experiment": "E4_equivalence",
-  "hardware": "Mac Mini M4 (CPU)",
-  "d_out": 1024,
-  "dtype": "float64",
-  "seeds": [42, 43, 44, 45, 46],
-  "results": [
-    {"T": 2, "r": 8, "Tr": 16, "mean_rel_error": 1.23e-15, "max_rel_error": 2.1e-15},
-    {"T": 2, "r": 16, "Tr": 32, "mean_rel_error": ...},
-    ...
-  ],
-  "all_passed": true
-}
-```
-
-Pass criterion: `max_rel_error < 1e-5` for all (T, r) pairs.
-
-Also generate a heatmap plot (T on x-axis, r on y-axis, cell color = log10(max_rel_error)) saved to `./results/e4/equivalence_heatmap.png`.
-
----
-
-### File 2: `experiments/e4_tr_scaling/run_e4_timing.py`
+### File: `experiments/e4_tr_scaling/run_e4_timing.py`
 **Platform: Lab RTX 6000 (CUDA required)**
 
 #### Configuration
@@ -128,13 +78,6 @@ Save to `./results/e4/timing/speedup_heatmap.png` and `./results/e4/timing/time_
 
 ## Dependencies
 
-`run_e4_equivalence.py`:
-```python
-import torch, json, logging, matplotlib
-# src/ package required — run with PYTHONPATH=.
-from src.pico import merge_pico
-from src.wbp import merge_wbp
-```
 
 `run_e4_timing.py`:
 ```python
@@ -146,5 +89,4 @@ import torch, time, json, logging, matplotlib
 
 ## Deliverables
 
-- `experiments/e4_tr_scaling/run_e4_equivalence.py` — Mac Mini compatible
 - `experiments/e4_tr_scaling/run_e4_timing.py` — CUDA only
