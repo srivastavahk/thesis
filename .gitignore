@@ -6,7 +6,6 @@ logs/
 
 # Project specific folders
 adapters/
-results/
 
 # Python caching
 __pycache__/

@@ -1,0 +1,20 @@
+{
+  "experiment": "E2",
+  "hardware": "RTX 6000 24GB",
+  "base_model": "unsloth/Meta-Llama-3.1-8B",
+  "dtype": "float16",
+  "T": 4,
+  "domain_names": [
+    "coding",
+    "finance",
+    "math",
+    "medical"
+  ],
+  "seed": 42,
+  "results": {
+    "no_cal": {
+      "gsm8k_exact_match": 0.52,
+      "finance_acc_norm": 0.72
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "gsm8k": {
+    "name": "gsm8k",
+    "alias": "gsm8k",
+    "sample_len": 150,
+    "exact_match,strict-match": 0.4533333333333333,
+    "exact_match_stderr,strict-match": 0.040782795278808064,
+    "exact_match,flexible-extract": 0.4533333333333333,
+    "exact_match_stderr,flexible-extract": 0.040782795278808064
+  },
+  "humaneval": {
+    "name": "humaneval",
+    "alias": "humaneval",
+    "sample_len": 150,
+    "pass@1,create_test": 0.44666666666666666,
+    "pass@1_stderr,create_test": 0.04072790343023467
+  },
+  "mmlu_high_school_macroeconomics_generative": {
+    "name": "mmlu_high_school_macroeconomics_generative",
+    "alias": "high_school_macroeconomics",
+    "sample_len": 150,
+    "exact_match,get_response": 0.48,
+    "exact_match_stderr,get_response": 0.04092881363092387
+  },
+  "medqa_4options": {
+    "name": "medqa_4options",
+    "alias": "medqa_4options",
+    "sample_len": 150,
+    "acc,none": 0.6066666666666667,
+    "acc_stderr,none": 0.04001863846147463,
+    "acc_norm,none": 0.6066666666666667,
+    "acc_norm_stderr,none": 0.04001863846147463
+  }
+}

@@ -1,0 +1,473 @@
+{
+  "experiment": "E1",
+  "hardware": "Device: cpu",
+  "dtype": "float64",
+  "base_model": "unsloth/Meta-Llama-3.1-8B",
+  "T": 4,
+  "domain_names": [
+    "coding",
+    "finance",
+    "math",
+    "medical"
+  ],
+  "num_layers_checked": 64,
+  "max_rel_error": 2.0412187877802743e-15,
+  "mean_rel_error": 5.320377766626018e-16,
+  "max_abs_error": 1.0581813203458523e-16,
+  "mean_abs_error": 1.357304818626448e-18,
+  "passed": true,
+  "verdict": "PASS \u2014 max_rel_error < 1e-5 (excellent)",
+  "seed": 42,
+  "load_time_s": 0.12,
+  "check_time_s": 0.95,
+  "per_layer_results": [
+    {
+      "layer": "base_model.model.model.layers.0.self_attn.q_proj",
+      "max_abs_error": 7.979727989493313e-17,
+      "mean_abs_error": 2.2270124466439966e-18,
+      "rel_error": 6.966778552114254e-16,
+      "max_rel_error": 6.966778552114254e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.0.self_attn.v_proj",
+      "max_abs_error": 1.1275702593849246e-17,
+      "mean_abs_error": 1.1521234357993059e-18,
+      "rel_error": 6.456953946877958e-16,
+      "max_rel_error": 6.456953946877958e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.1.self_attn.q_proj",
+      "max_abs_error": 1.0321604682062002e-16,
+      "mean_abs_error": 4.458241044179286e-18,
+      "rel_error": 2.0412187877802743e-15,
+      "max_rel_error": 2.0412187877802743e-15
+    },
+    {
+      "layer": "base_model.model.model.layers.1.self_attn.v_proj",
+      "max_abs_error": 1.734723475976807e-17,
+      "mean_abs_error": 1.1838075436763256e-18,
+      "rel_error": 6.040491213831515e-16,
+      "max_rel_error": 6.040491213831515e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.10.self_attn.q_proj",
+      "max_abs_error": 6.097790187283708e-17,
+      "mean_abs_error": 1.0734450724600361e-18,
+      "rel_error": 4.225973812500915e-16,
+      "max_rel_error": 4.225973812500915e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.10.self_attn.v_proj",
+      "max_abs_error": 1.474514954580286e-17,
+      "mean_abs_error": 1.1162957582422384e-18,
+      "rel_error": 4.936600812179552e-16,
+      "max_rel_error": 4.936600812179552e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.11.self_attn.q_proj",
+      "max_abs_error": 3.469446951953614e-17,
+      "mean_abs_error": 1.2597054093383446e-18,
+      "rel_error": 4.431072612663295e-16,
+      "max_rel_error": 4.431072612663295e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.11.self_attn.v_proj",
+      "max_abs_error": 8.673617379884035e-18,
+      "mean_abs_error": 1.0078707398221357e-18,
+      "rel_error": 4.546092687225917e-16,
+      "max_rel_error": 4.546092687225917e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.12.self_attn.q_proj",
+      "max_abs_error": 5.767955557622884e-17,
+      "mean_abs_error": 1.0196315636905706e-18,
+      "rel_error": 3.8143798216319595e-16,
+      "max_rel_error": 3.8143798216319595e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.12.self_attn.v_proj",
+      "max_abs_error": 8.239936510889834e-18,
+      "mean_abs_error": 8.328979676149786e-19,
+      "rel_error": 3.4852948661157184e-16,
+      "max_rel_error": 3.4852948661157184e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.13.self_attn.q_proj",
+      "max_abs_error": 2.6020852139652106e-17,
+      "mean_abs_error": 1.2792880530865752e-18,
+      "rel_error": 4.2792112667565584e-16,
+      "max_rel_error": 4.2792112667565584e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.13.self_attn.v_proj",
+      "max_abs_error": 9.540979117872439e-18,
+      "mean_abs_error": 7.949458004994199e-19,
+      "rel_error": 3.3272544538528022e-16,
+      "max_rel_error": 3.3272544538528022e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.14.self_attn.q_proj",
+      "max_abs_error": 3.1008182133085427e-17,
+      "mean_abs_error": 9.438405141182981e-19,
+      "rel_error": 3.632110482294874e-16,
+      "max_rel_error": 3.632110482294874e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.14.self_attn.v_proj",
+      "max_abs_error": 1.214306433183765e-17,
+      "mean_abs_error": 8.793001252737291e-19,
+      "rel_error": 3.7267744351719506e-16,
+      "max_rel_error": 3.7267744351719506e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.15.self_attn.q_proj",
+      "max_abs_error": 4.7271214720367993e-17,
+      "mean_abs_error": 1.2480389191179027e-18,
+      "rel_error": 4.512499444158527e-16,
+      "max_rel_error": 4.512499444158527e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.15.self_attn.v_proj",
+      "max_abs_error": 1.0408340855860843e-17,
+      "mean_abs_error": 8.418556934725261e-19,
+      "rel_error": 3.5747992127204147e-16,
+      "max_rel_error": 3.5747992127204147e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.16.self_attn.q_proj",
+      "max_abs_error": 4.7271214720367993e-17,
+      "mean_abs_error": 1.6206842523058895e-18,
+      "rel_error": 6.143641576592098e-16,
+      "max_rel_error": 6.143641576592098e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.16.self_attn.v_proj",
+      "max_abs_error": 1.0408340855860843e-17,
+      "mean_abs_error": 9.843065895660463e-19,
+      "rel_error": 4.2084506386000426e-16,
+      "max_rel_error": 4.2084506386000426e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.17.self_attn.q_proj",
+      "max_abs_error": 4.163336342344337e-17,
+      "mean_abs_error": 1.1651392003585854e-18,
+      "rel_error": 4.32350188496312e-16,
+      "max_rel_error": 4.32350188496312e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.17.self_attn.v_proj",
+      "max_abs_error": 1.3877787807814457e-17,
+      "mean_abs_error": 1.1564321645791578e-18,
+      "rel_error": 5.044548107979106e-16,
+      "max_rel_error": 5.044548107979106e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.18.self_attn.q_proj",
+      "max_abs_error": 6.158268339717665e-17,
+      "mean_abs_error": 2.11034540795891e-18,
+      "rel_error": 7.533031165872967e-16,
+      "max_rel_error": 7.533031165872967e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.18.self_attn.v_proj",
+      "max_abs_error": 1.5612511283791264e-17,
+      "mean_abs_error": 1.3747093659579784e-18,
+      "rel_error": 5.739959897613492e-16,
+      "max_rel_error": 5.739959897613492e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.19.self_attn.q_proj",
+      "max_abs_error": 3.469446951953614e-17,
+      "mean_abs_error": 1.2789189788354244e-18,
+      "rel_error": 5.433553572012819e-16,
+      "max_rel_error": 5.433553572012819e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.19.self_attn.v_proj",
+      "max_abs_error": 2.42861286636753e-17,
+      "mean_abs_error": 1.0866414780287222e-18,
+      "rel_error": 4.660508668290676e-16,
+      "max_rel_error": 4.660508668290676e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.2.self_attn.q_proj",
+      "max_abs_error": 7.586704701967317e-17,
+      "mean_abs_error": 8.739430479917262e-19,
+      "rel_error": 3.6746638864171537e-16,
+      "max_rel_error": 3.6746638864171537e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.2.self_attn.v_proj",
+      "max_abs_error": 1.8214596497756474e-17,
+      "mean_abs_error": 8.884018727473016e-19,
+      "rel_error": 4.5928748959541905e-16,
+      "max_rel_error": 4.5928748959541905e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.20.self_attn.q_proj",
+      "max_abs_error": 3.9898639947466563e-17,
+      "mean_abs_error": 1.2180837222954002e-18,
+      "rel_error": 4.710709697902522e-16,
+      "max_rel_error": 4.710709697902522e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.20.self_attn.v_proj",
+      "max_abs_error": 1.7780915628762273e-17,
+      "mean_abs_error": 9.496966959501706e-19,
+      "rel_error": 3.800646654877645e-16,
+      "max_rel_error": 3.800646654877645e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.21.self_attn.q_proj",
+      "max_abs_error": 2.949029909160572e-17,
+      "mean_abs_error": 1.0440075122922095e-18,
+      "rel_error": 3.711579957978658e-16,
+      "max_rel_error": 3.711579957978658e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.21.self_attn.v_proj",
+      "max_abs_error": 2.168404344971009e-17,
+      "mean_abs_error": 1.5599079733516342e-18,
+      "rel_error": 6.074412902610996e-16,
+      "max_rel_error": 6.074412902610996e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.22.self_attn.q_proj",
+      "max_abs_error": 4.5102810375396984e-17,
+      "mean_abs_error": 1.4766789664651904e-18,
+      "rel_error": 5.29753095078839e-16,
+      "max_rel_error": 5.29753095078839e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.22.self_attn.v_proj",
+      "max_abs_error": 3.122502256758253e-17,
+      "mean_abs_error": 2.2968402886945295e-18,
+      "rel_error": 8.384879347293972e-16,
+      "max_rel_error": 8.384879347293972e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.23.self_attn.q_proj",
+      "max_abs_error": 4.401860820291148e-17,
+      "mean_abs_error": 1.7991810792259113e-18,
+      "rel_error": 6.365672477837783e-16,
+      "max_rel_error": 6.365672477837783e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.23.self_attn.v_proj",
+      "max_abs_error": 1.9081958235744878e-17,
+      "mean_abs_error": 1.2517538817607257e-18,
+      "rel_error": 4.562298028476018e-16,
+      "max_rel_error": 4.562298028476018e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.24.self_attn.q_proj",
+      "max_abs_error": 6.158268339717665e-17,
+      "mean_abs_error": 1.1164899884315001e-18,
+      "rel_error": 4.372902619451853e-16,
+      "max_rel_error": 4.372902619451853e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.24.self_attn.v_proj",
+      "max_abs_error": 2.667137344314341e-17,
+      "mean_abs_error": 1.2516002090815466e-18,
+      "rel_error": 5.007657143480131e-16,
+      "max_rel_error": 5.007657143480131e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.25.self_attn.q_proj",
+      "max_abs_error": 5.377642775528102e-17,
+      "mean_abs_error": 8.590730860443203e-19,
+      "rel_error": 3.410895325842038e-16,
+      "max_rel_error": 3.410895325842038e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.25.self_attn.v_proj",
+      "max_abs_error": 2.0057740190981832e-17,
+      "mean_abs_error": 1.3981131748203405e-18,
+      "rel_error": 5.282360602680941e-16,
+      "max_rel_error": 5.282360602680941e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.26.self_attn.q_proj",
+      "max_abs_error": 4.0766001685454967e-17,
+      "mean_abs_error": 1.036694061789105e-18,
+      "rel_error": 4.236546788443208e-16,
+      "max_rel_error": 4.236546788443208e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.26.self_attn.v_proj",
+      "max_abs_error": 2.7755575615628914e-17,
+      "mean_abs_error": 2.1736536852409554e-18,
+      "rel_error": 8.046798113098296e-16,
+      "max_rel_error": 8.046798113098296e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.27.self_attn.q_proj",
+      "max_abs_error": 6.505213034913027e-17,
+      "mean_abs_error": 2.4576471236972496e-18,
+      "rel_error": 8.62403273099711e-16,
+      "max_rel_error": 8.62403273099711e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.27.self_attn.v_proj",
+      "max_abs_error": 1.9949319973733282e-17,
+      "mean_abs_error": 1.701865206904477e-18,
+      "rel_error": 5.999756916825006e-16,
+      "max_rel_error": 5.999756916825006e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.28.self_attn.q_proj",
+      "max_abs_error": 9.283481101907132e-17,
+      "mean_abs_error": 1.3259406440555318e-18,
+      "rel_error": 5.058977355587393e-16,
+      "max_rel_error": 5.058977355587393e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.28.self_attn.v_proj",
+      "max_abs_error": 2.7755575615628914e-17,
+      "mean_abs_error": 2.2353730535668284e-18,
+      "rel_error": 8.126412505364551e-16,
+      "max_rel_error": 8.126412505364551e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.29.self_attn.q_proj",
+      "max_abs_error": 3.2959746043559335e-17,
+      "mean_abs_error": 1.0273556672647236e-18,
+      "rel_error": 3.5478827011609923e-16,
+      "max_rel_error": 3.5478827011609923e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.29.self_attn.v_proj",
+      "max_abs_error": 3.165870343657673e-17,
+      "mean_abs_error": 2.0347537058047457e-18,
+      "rel_error": 6.972399324829979e-16,
+      "max_rel_error": 6.972399324829979e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.3.self_attn.q_proj",
+      "max_abs_error": 1.5612511283791264e-17,
+      "mean_abs_error": 1.3075446552777081e-18,
+      "rel_error": 4.84302280467975e-16,
+      "max_rel_error": 4.84302280467975e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.3.self_attn.v_proj",
+      "max_abs_error": 1.3010426069826053e-17,
+      "mean_abs_error": 1.101731664877177e-18,
+      "rel_error": 4.739546375570686e-16,
+      "max_rel_error": 4.739546375570686e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.30.self_attn.q_proj",
+      "max_abs_error": 3.209238430557093e-17,
+      "mean_abs_error": 1.3350154946759858e-18,
+      "rel_error": 4.904765492993512e-16,
+      "max_rel_error": 4.904765492993512e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.30.self_attn.v_proj",
+      "max_abs_error": 3.122502256758253e-17,
+      "mean_abs_error": 3.042208569466759e-18,
+      "rel_error": 1.1184657678693482e-15,
+      "max_rel_error": 1.1184657678693482e-15
+    },
+    {
+      "layer": "base_model.model.model.layers.31.self_attn.q_proj",
+      "max_abs_error": 1.0581813203458523e-16,
+      "mean_abs_error": 1.3401713807496588e-18,
+      "rel_error": 5.085009154363583e-16,
+      "max_rel_error": 5.085009154363583e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.31.self_attn.v_proj",
+      "max_abs_error": 2.7755575615628914e-17,
+      "mean_abs_error": 2.5295815252552045e-18,
+      "rel_error": 8.350776141518686e-16,
+      "max_rel_error": 8.350776141518686e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.4.self_attn.q_proj",
+      "max_abs_error": 2.0816681711721685e-17,
+      "mean_abs_error": 1.05082028077782e-18,
+      "rel_error": 4.447642813471373e-16,
+      "max_rel_error": 4.447642813471373e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.4.self_attn.v_proj",
+      "max_abs_error": 1.3444106938820255e-17,
+      "mean_abs_error": 9.191124092876866e-19,
+      "rel_error": 4.343151828564887e-16,
+      "max_rel_error": 4.343151828564887e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.5.self_attn.q_proj",
+      "max_abs_error": 4.586175189613684e-17,
+      "mean_abs_error": 1.0672454189604164e-18,
+      "rel_error": 4.245737041416234e-16,
+      "max_rel_error": 4.245737041416234e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.5.self_attn.v_proj",
+      "max_abs_error": 1.734723475976807e-17,
+      "mean_abs_error": 1.1079764578434524e-18,
+      "rel_error": 5.128558301413883e-16,
+      "max_rel_error": 5.128558301413883e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.6.self_attn.q_proj",
+      "max_abs_error": 3.0249240612345574e-17,
+      "mean_abs_error": 8.581230394654103e-19,
+      "rel_error": 3.2789570494173794e-16,
+      "max_rel_error": 3.2789570494173794e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.6.self_attn.v_proj",
+      "max_abs_error": 1.3877787807814457e-17,
+      "mean_abs_error": 8.252418741660009e-19,
+      "rel_error": 3.8338638666189383e-16,
+      "max_rel_error": 3.8338638666189383e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.7.self_attn.q_proj",
+      "max_abs_error": 3.642919299551295e-17,
+      "mean_abs_error": 1.2794452659147505e-18,
+      "rel_error": 4.766501943182095e-16,
+      "max_rel_error": 4.766501943182095e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.7.self_attn.v_proj",
+      "max_abs_error": 1.2576745200831851e-17,
+      "mean_abs_error": 7.909164021911792e-19,
+      "rel_error": 3.325707049352154e-16,
+      "max_rel_error": 3.325707049352154e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.8.self_attn.q_proj",
+      "max_abs_error": 1.951563910473908e-17,
+      "mean_abs_error": 8.612109262405953e-19,
+      "rel_error": 2.982764231146553e-16,
+      "max_rel_error": 2.982764231146553e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.8.self_attn.v_proj",
+      "max_abs_error": 1.3877787807814457e-17,
+      "mean_abs_error": 1.1681114006252217e-18,
+      "rel_error": 4.759123588400371e-16,
+      "max_rel_error": 4.759123588400371e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.9.self_attn.q_proj",
+      "max_abs_error": 2.6454533008646308e-17,
+      "mean_abs_error": 1.047790983421507e-18,
+      "rel_error": 3.9928674600543243e-16,
+      "max_rel_error": 3.9928674600543243e-16
+    },
+    {
+      "layer": "base_model.model.model.layers.9.self_attn.v_proj",
+      "max_abs_error": 1.3877787807814457e-17,
+      "mean_abs_error": 1.1627284707936329e-18,
+      "rel_error": 4.973962305485165e-16,
+      "max_rel_error": 4.973962305485165e-16
+    }
+  ]
+}
