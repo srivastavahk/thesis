@@ -1,0 +1,79 @@
+{
+  "experiment": "E5",
+  "hardware": "RTX 6000 24GB",
+  "base_model": "unsloth/Meta-Llama-3.1-8B",
+  "dtype": "bfloat16",
+  "T": 4,
+  "seed": 42,
+  "beta_values": [
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    1.5,
+    2.0,
+    4.0
+  ],
+  "baselines": {
+    "no_cal_average": 0.0,
+    "pico_average": 0.0
+  },
+  "results": [
+    {
+      "gsm8k": 0.0,
+      "humaneval": 0.0,
+      "finqa_exact_match": 0.0,
+      "medmcqa_accuracy": 0.0,
+      "average": 0.0,
+      "beta": 0.25
+    },
+    {
+      "gsm8k": 0.0,
+      "humaneval": 0.0,
+      "finqa_exact_match": 0.0,
+      "medmcqa_accuracy": 0.0,
+      "average": 0.0,
+      "beta": 0.5
+    },
+    {
+      "gsm8k": 0.0,
+      "humaneval": 0.0,
+      "finqa_exact_match": 0.0,
+      "medmcqa_accuracy": 0.0,
+      "average": 0.0,
+      "beta": 0.75
+    },
+    {
+      "gsm8k": 0.0,
+      "humaneval": 0.0,
+      "finqa_exact_match": 0.0,
+      "medmcqa_accuracy": 0.0,
+      "average": 0.0,
+      "beta": 1.0
+    },
+    {
+      "gsm8k": 0.0,
+      "humaneval": 0.0,
+      "finqa_exact_match": 0.0,
+      "medmcqa_accuracy": 0.0,
+      "average": 0.0,
+      "beta": 1.5
+    },
+    {
+      "gsm8k": 0.0,
+      "humaneval": 0.0,
+      "finqa_exact_match": 0.0,
+      "medmcqa_accuracy": 0.0,
+      "average": 0.0,
+      "beta": 2.0
+    },
+    {
+      "gsm8k": 0.0,
+      "humaneval": 0.0,
+      "finqa_exact_match": 0.0,
+      "medmcqa_accuracy": 0.0,
+      "average": 0.0,
+      "beta": 4.0
+    }
+  ]
+}
