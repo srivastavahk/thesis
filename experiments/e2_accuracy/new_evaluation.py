@@ -8,6 +8,7 @@ import torch
 from unsloth import FastLanguageModel
 import lm_eval
 from lm_eval.models.huggingface import HFLM
+from lm_eval.tasks import TaskManager
 
 def apply_dense_update(model, state_dict_path: Path):
     """Loads a dense \Delta W state_dict and adds it to the base model weights."""
@@ -60,12 +61,15 @@ def main():
     tasks = ["gsm8k", "humaneval", "finqa", "medmcqa"]
 
     print(f"Starting benchmark for tasks: {tasks} ...")
+    
+    task_manager = TaskManager(include_path="experiments/e2_accuracy/custom_tasks")
+    
     results = lm_eval.simple_evaluate(
         model=eval_model,
         tasks=tasks,
+        task_manager=task_manager,
         batch_size="auto",
         device="cuda",
-        include_path="experiments/e2_accuracy/custom_tasks",
         confirm_run_unsafe_code=True
     )
 
