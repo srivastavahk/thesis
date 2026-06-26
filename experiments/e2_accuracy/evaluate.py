@@ -40,25 +40,11 @@ def _run_lm_eval(
     tasks: list,
     n_samples: Optional[int],
     batch_size: str | int,
-    seed: int,
     extra_kwargs: Optional[dict] = None,
 ) -> dict:
     """
-    Wrap a HuggingFace model in an HFLM and call lm_eval.simple_evaluate.
-
-    Parameters
-    ----------
-    model        : A HuggingFace CausalLM already loaded and on the correct device.
-    tokenizer    : Matching tokenizer.
-    tasks        : List of lm_eval task names.
-    n_samples    : Limit evaluation to this many examples (None = full dataset).
-    batch_size   : Passed to HFLM. Use "auto" to let lm_eval tune for VRAM.
-    seed         : Random seed for shuffling.
-    extra_kwargs : Additional kwargs forwarded to simple_evaluate (e.g. num_fewshot).
-
-    Returns
-    -------
-    dict of {metric_name: float} extracted from lm_eval results.
+    Wrap a HuggingFace model in an HFLM and call lm_eval.simple_evaluate
+    using the exact signature from the reference script.
     """
     import lm_eval
     from lm_eval.models.huggingface import HFLM
@@ -66,18 +52,17 @@ def _run_lm_eval(
     eval_model = HFLM(
         pretrained=model,
         tokenizer=tokenizer,
-        batch_size=batch_size,
     )
 
     kwargs = dict(
         model=eval_model,
         tasks=tasks,
-        limit=n_samples,
-        random_seed=seed,
-        numpy_random_seed=seed,
-        torch_random_seed=seed,
-        log_samples=False,
+        batch_size=batch_size,
+        device="cuda",
     )
+    if n_samples is not None:
+        kwargs["limit"] = n_samples
+
     if extra_kwargs:
         kwargs.update(extra_kwargs)
 
@@ -100,7 +85,6 @@ def eval_gsm8k(
 ) -> float:
     """
     Evaluate on GSM8K (5-shot, exact-match on numeric answer).
-    Returns accuracy ∈ [0, 1].
     """
     log.info("Running GSM8K (n=%s) ...", n_samples or "full")
     raw = _run_lm_eval(
@@ -108,7 +92,6 @@ def eval_gsm8k(
         tasks=["gsm8k"],
         n_samples=n_samples,
         batch_size=batch_size,
-        seed=seed,
         extra_kwargs={"num_fewshot": 5},
     )
     # lm_eval reports "exact_match,strict-match" or "exact_match,flexible-extract"
@@ -124,7 +107,7 @@ def eval_gsm8k(
 
 
 # ---------------------------------------------------------------------------
-# HumanEval
+# HumanEval (lm_eval)
 # ---------------------------------------------------------------------------
 
 def eval_humaneval(
@@ -137,13 +120,10 @@ def eval_humaneval(
     **_,
 ) -> float:
     """
-    Evaluate on HumanEval (pass@1, greedy decoding via lm_eval).
-    Sets HF_ALLOW_CODE_EVAL=1 so lm_eval can run the generated code.
-    Returns pass@1 ∈ [0, 1].
+    Evaluate on HumanEval (pass@1).
+    Sets HF_ALLOW_CODE_EVAL=1 and confirm_run_unsafe_code=True.
     """
-    log.info("Running HumanEval (n=%s) ...", n_samples or "full")
-
-    # lm_eval requires this env var to execute code (uses its own sandbox)
+    log.info("Running HumanEval (n=%s) via lm_eval ...", n_samples or "full")
     os.environ["HF_ALLOW_CODE_EVAL"] = "1"
 
     raw = _run_lm_eval(
@@ -151,7 +131,6 @@ def eval_humaneval(
         tasks=["humaneval"],
         n_samples=n_samples,
         batch_size=batch_size,
-        seed=seed,
         extra_kwargs={"confirm_run_unsafe_code": True},
     )
     task_results = raw.get("humaneval", {})
@@ -193,7 +172,6 @@ def eval_finance(
         tasks=[FINANCE_TASK],
         n_samples=n_samples,
         batch_size=batch_size,
-        seed=seed,
         extra_kwargs={"num_fewshot": 0},
     )
     task_results = raw.get(FINANCE_TASK, {})
@@ -229,7 +207,6 @@ def eval_medmcqa(
         tasks=["medmcqa"],
         n_samples=n_samples,
         batch_size=batch_size,
-        seed=seed,
         extra_kwargs={"num_fewshot": 0},
     )
     task_results = raw.get("medmcqa", {})
