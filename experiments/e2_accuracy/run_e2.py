@@ -11,7 +11,7 @@ Usage
         --adapters_dir ./adapters \
         --base_model   meta-llama/Llama-3.1-8B \
         --output_dir   ./results/e2 \
-        --dtype        bfloat16 \
+        --dtype        float16 \
         --device       cuda \
         --seed         42
 
@@ -217,17 +217,15 @@ def restore_model_weights(model, original_weights: Dict[str, torch.Tensor]):
 # Evaluation pipeline
 # ---------------------------------------------------------------------------
 
-def run_eval_suite(model, tokenizer, device: str, seed: int, batch_size: int) -> dict:
-    """Run all 4 benchmarks and return a dict of scores."""
-    # Import from sibling evaluate.py
+def run_eval_suite(model, tokenizer, seed: int) -> dict:
     sys.path.insert(0, str(Path(__file__).parent))
-    from evaluate import eval_gsm8k, eval_humaneval, eval_finqa, eval_medmcqa
+    from evaluate import eval_gsm8k, eval_humaneval, eval_finance, eval_medmcqa
 
     scores = {}
-    scores["gsm8k_exact_match"]   = eval_gsm8k(model, tokenizer, device, batch_size=batch_size)
-    scores["humaneval_pass_at_1"] = eval_humaneval(model, tokenizer, device, batch_size=batch_size)
-    scores["finqa_exact_match"]   = eval_finqa(model, tokenizer, device, seed=seed, batch_size=batch_size)
-    scores["medmcqa_accuracy"]    = eval_medmcqa(model, tokenizer, device, seed=seed, batch_size=batch_size)
+    scores["gsm8k_exact_match"]     = eval_gsm8k(model, tokenizer, device=None, seed=seed)
+    scores["humaneval_pass_at_1"]   = eval_humaneval(model, tokenizer, device=None, seed=seed)
+    scores["finance_acc_norm"]      = eval_finance(model, tokenizer, device=None, seed=seed)
+    scores["medmcqa_accuracy"]      = eval_medmcqa(model, tokenizer, device=None, seed=seed)
     scores["average"] = sum(scores.values()) / len(scores)
     return scores
 
@@ -241,12 +239,10 @@ def parse_args():
     parser.add_argument("--adapters_dir", type=Path, default=Path("./adapters"))
     parser.add_argument("--base_model",   type=str,  default="meta-llama/Llama-3.1-8B")
     parser.add_argument("--output_dir",   type=Path, default=Path("./results/e2"))
-    parser.add_argument("--dtype",        type=str,  default="bfloat16",
-                        choices=["bfloat16", "float32"])
+    parser.add_argument("--dtype",        type=str,  default="float16",
+                        choices=["bfloat16", "float16", "float32"])
     parser.add_argument("--device",       type=str,  default="cuda")
     parser.add_argument("--seed",         type=int,  default=42)
-    parser.add_argument("--batch_size",   type=int,  default=4,
-                        help="Inference batch size (keep ≤4 on RTX 6000 with 8B model).")
     return parser.parse_args()
 
 
@@ -254,11 +250,18 @@ def main():
     args = parse_args()
     torch.manual_seed(args.seed)
 
-    if args.device == "cuda" and not torch.cuda.is_available():
-        log.error("CUDA not available. This script must run on the Lab RTX 6000.")
-        sys.exit(1)
+    if args.device == "cuda":
+        if not torch.cuda.is_available():
+            log.error("CUDA not available. This script must run on the Lab RTX 6000.")
+            sys.exit(1)
+        
+        # Explicitly clear CUDA memory before starting
+        import gc
+        gc.collect()
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
 
-    dtype_map = {"bfloat16": torch.bfloat16, "float32": torch.float32}
+    dtype_map = {"bfloat16": torch.bfloat16, "float16": torch.float16, "float32": torch.float32}
     model_dtype = dtype_map[args.dtype]
 
     log.info("=" * 60)
@@ -327,7 +330,7 @@ def main():
 
         # Evaluate
         with torch.no_grad():
-            scores = run_eval_suite(model, tokenizer, args.device, args.seed, args.batch_size)
+            scores = run_eval_suite(model, tokenizer, args.seed)
 
         # Restore weights
         restore_model_weights(model, originals)
@@ -362,13 +365,13 @@ def main():
     log.info("=" * 60)
     log.info("SUMMARY")
     log.info("%-12s  %-8s  %-8s  %-8s  %-8s  %-8s",
-             "Mode", "GSM8K", "HumanEv", "FinQA", "MedMCQA", "Avg")
+             "Mode", "GSM8K", "HumanEv", "Finance", "MedMCQA", "Avg")
     for mode, s in all_results.items():
         log.info("%-12s  %-8.4f  %-8.4f  %-8.4f  %-8.4f  %-8.4f",
                  mode,
                  s["gsm8k_exact_match"],
                  s["humaneval_pass_at_1"],
-                 s["finqa_exact_match"],
+                 s["finance_acc_norm"],
                  s["medmcqa_accuracy"],
                  s["average"])
 

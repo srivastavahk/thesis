@@ -1,7 +1,7 @@
 """
 E1 — Operator-level Equivalence on Real LoRA Adapters
 ======================================================
-Platform : Mac Mini M4 (CPU / MPS — no CUDA required)
+Platform : Mac Mini M4 (CPU) or Lab PC (CUDA)
 Purpose  : Load T real trained LoRA adapters from disk, run Pico and WBP on
            every layer, and verify that B_tilde_pico == B_tilde_wbp to
            machine precision.
@@ -104,6 +104,7 @@ def _load_state_dict(adapter_dir: Path) -> Dict[str, torch.Tensor]:
 def load_adapters(
     adapters_dir: Path,
     dtype: torch.dtype,
+    device: torch.device,
 ) -> Dict[str, Dict[str, List[torch.Tensor]]]:
     """
     Discover and load all adapter subdirectories under `adapters_dir`.
@@ -132,8 +133,8 @@ def load_adapters(
     for subdir in subdirs:
         log.info("Loading adapter: %s", subdir.name)
         sd = _load_state_dict(subdir)
-        # Cast to requested dtype
-        sd = {k: v.to(dtype) for k, v in sd.items()}
+        # Cast to requested dtype and move to device
+        sd = {k: v.to(device=device, dtype=dtype) for k, v in sd.items()}
         per_domain_weights.append(sd)
 
     # Build layer_map.
@@ -307,6 +308,12 @@ def parse_args():
         help="Precision to cast adapter weights into before comparison.",
     )
     parser.add_argument(
+        "--device",
+        type=str,
+        default="cpu",
+        help="Device to run the equivalence check on (e.g., 'cpu', 'cuda').",
+    )
+    parser.add_argument(
         "--seed",
         type=int,
         default=42,
@@ -321,6 +328,7 @@ def main():
 
     dtype_map = {"float32": torch.float32, "float64": torch.float64}
     dtype = dtype_map[args.dtype]
+    device = torch.device(args.device)
 
     log.info("=" * 60)
     log.info("E1 — Pico vs WBP equivalence on real adapters")
@@ -328,6 +336,7 @@ def main():
     log.info("  base_model   : %s (NOT loaded — adapter weights only)", args.base_model)
     log.info("  output_dir   : %s", args.output_dir)
     log.info("  dtype        : %s", args.dtype)
+    log.info("  device       : %s", device)
     log.info("  seed         : %d", args.seed)
     log.info("=" * 60)
 
@@ -339,7 +348,7 @@ def main():
         sys.exit(1)
 
     t0 = time.perf_counter()
-    layer_map, domain_names = load_adapters(args.adapters_dir, dtype)
+    layer_map, domain_names = load_adapters(args.adapters_dir, dtype, device)
     T = len(domain_names)
     load_time = time.perf_counter() - t0
     log.info("Adapter loading complete in %.1f s", load_time)
@@ -407,7 +416,7 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
     results = {
         "experiment":        "E1",
-        "hardware":          "Mac Mini M4 (CPU)",
+        "hardware":          f"Device: {device}",
         "dtype":             args.dtype,
         "base_model":        args.base_model,
         "T":                 T,

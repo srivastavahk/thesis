@@ -93,13 +93,13 @@ def apply_wbp_beta(
 # Benchmark evaluation (import from E2's evaluate.py)
 # ---------------------------------------------------------------------------
 
-def run_eval_suite(model, tokenizer, device: str, seed: int, batch_size: int) -> dict:
-    from evaluate import eval_gsm8k, eval_humaneval, eval_finqa, eval_medmcqa
+def run_eval_suite(model, tokenizer, seed: int) -> dict:
+    from evaluate import eval_gsm8k, eval_humaneval, eval_finance, eval_medmcqa
     scores = {}
-    scores["gsm8k_exact_match"]   = eval_gsm8k(model, tokenizer, device, batch_size=batch_size)
-    scores["humaneval_pass_at_1"] = eval_humaneval(model, tokenizer, device, batch_size=batch_size)
-    scores["finqa_exact_match"]   = eval_finqa(model, tokenizer, device, seed=seed, batch_size=batch_size)
-    scores["medmcqa_accuracy"]    = eval_medmcqa(model, tokenizer, device, seed=seed, batch_size=batch_size)
+    scores["gsm8k_exact_match"]     = eval_gsm8k(model, tokenizer, device=None, seed=seed)
+    scores["humaneval_pass_at_1"]   = eval_humaneval(model, tokenizer, device=None, seed=seed)
+    scores["finance_acc_norm"]      = eval_finance(model, tokenizer, device=None, seed=seed)
+    scores["medmcqa_accuracy"]      = eval_medmcqa(model, tokenizer, device=None, seed=seed)
     scores["average"] = sum(scores.values()) / len(scores)
     return scores
 
@@ -113,11 +113,10 @@ def parse_args():
     parser.add_argument("--adapters_dir",     type=Path, default=Path("./adapters"))
     parser.add_argument("--base_model",       type=str,  default="meta-llama/Llama-3.1-8B")
     parser.add_argument("--output_dir",       type=Path, default=Path("./results/e5"))
-    parser.add_argument("--dtype",            type=str,  default="bfloat16",
-                        choices=["bfloat16", "float32"])
+    parser.add_argument("--dtype",            type=str,  default="float16",
+                        choices=["bfloat16", "float16", "float32"])
     parser.add_argument("--device",           type=str,  default="cuda")
     parser.add_argument("--seed",             type=int,  default=42)
-    parser.add_argument("--batch_size",       type=int,  default=4)
     parser.add_argument("--e2_results_json",  type=Path, default=None,
                         help="Path to E2 results.json for baseline overlay on plots.")
     return parser.parse_args()
@@ -131,11 +130,16 @@ def main():
     args = parse_args()
     torch.manual_seed(args.seed)
 
-    if args.device == "cuda" and not torch.cuda.is_available():
-        log.error("CUDA not available. This script must run on the Lab RTX 6000.")
-        sys.exit(1)
+    if args.device == "cuda":
+        if not torch.cuda.is_available():
+            log.error("CUDA not available. This script must run on the Lab RTX 6000.")
+            sys.exit(1)
+        import gc
+        gc.collect()
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
 
-    dtype_map = {"bfloat16": torch.bfloat16, "float32": torch.float32}
+    dtype_map = {"bfloat16": torch.bfloat16, "float16": torch.float16, "float32": torch.float32}
     model_dtype = dtype_map[args.dtype]
 
     log.info("=" * 60)
@@ -213,8 +217,7 @@ def main():
         )
 
         # Evaluate
-        with torch.no_grad():
-            scores = run_eval_suite(model, tokenizer, args.device, args.seed, args.batch_size)
+        scores = run_eval_suite(model, tokenizer, args.seed)
 
         # Restore
         restore_model_weights(model, originals)
@@ -321,7 +324,7 @@ def _make_plots(sweep_results: list, baselines: dict, output_dir: Path):
     benchmarks = [
         ("gsm8k_exact_match",   "GSM8K (exact match)"),
         ("humaneval_pass_at_1", "HumanEval (pass@1)"),
-        ("finqa_exact_match",   "FinQA (exact match)"),
+        ("finance_acc_norm",    "Finance/MMLU Macro (acc_norm)"),
         ("medmcqa_accuracy",    "MedMCQA (accuracy)"),
     ]
     fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True)

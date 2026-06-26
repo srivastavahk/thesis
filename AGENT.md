@@ -293,7 +293,7 @@ PYTHONPATH=. python experiments/e5_beta_sweep/run_e5.py \
 |---|---|---|
 | `results/e4/equivalence/results.json` | E4 equivalence grid results | ✅ Done — all_passed: true |
 | `results/e4/equivalence/equivalence_heatmap.png` | Log-scale heatmap | ✅ Generated |
-| `results/e1/` | E1 on real adapters | ⏳ Waiting for adapters |
+| `results/e1/` | E1 on real adapters | ✅ Done — passed: true (max_rel_error=2.04e-15) |
 | `results/e2/` | E2 accuracy parity | ⏳ Waiting for lab GPU session |
 | `results/e3/` | E3 timing | ⏳ Waiting for lab GPU session |
 | `results/e5/` | E5 β sweep | ⏳ Waiting for E2 results |
@@ -328,29 +328,14 @@ PYTHONPATH=. python experiments/e5_beta_sweep/run_e5.py \
 
 ### Pending — requires Lab GPU
 
-- [ ] **Lab GPU Session 0 (~16–20h):** Train all 4 adapters sequentially.
-  ```bash
-  export HF_TOKEN=hf_xxxxxx   # must have WRITE scope
-  PYTHONPATH=. python experiments/adapter_training/train_adapter.py --domain math
-  PYTHONPATH=. python experiments/adapter_training/train_adapter.py --domain coding
-  PYTHONPATH=. python experiments/adapter_training/train_adapter.py --domain finance
-  PYTHONPATH=. python experiments/adapter_training/train_adapter.py --domain medical
-  ```
-  Adapters auto-pushed to `mml2024003/Llama-3.1-8B_{domain}` on HuggingFace Hub.
+- [x] **Lab GPU Session 0 (~16–20h):** Train all 4 adapters sequentially.
+  (Completed using Unsloth script on Lab GPU).
 
-- [ ] **Copy adapters to Mac Mini** after training:
-  ```bash
-  rsync -avz <user>@<lab-ip>:~/thesis/adapters/ /Users/demid/thesis/adapters/
-  # OR: huggingface-cli download mml2024003/Llama-3.1-8B_math --local-dir ./adapters/math
-  ```
+- [x] **Copy adapters to Mac Mini** after training:
+  (Completed).
 
-- [ ] **Run E1 on Mac Mini** — verify equivalence on real adapter weights:
-  ```bash
-  PYTHONPATH=. python experiments/e1_equivalence/run_e1.py \
-    --adapters_dir ./adapters --output_dir ./results/e1 --dtype float64
-  ```
-  Expected: `results/e1/results.json` with `passed: true`, `max_rel_error < 1e-4`.
-  **Do not proceed to E2/E5 until E1 passes.**
+- [x] **Run E1** — verify equivalence on real adapter weights:
+  Ran successfully on Lab GPU (`max_rel_error=2.04e-15`).
 
 - [ ] **Lab GPU Session 1 (~30–45 min):** Bundle E3 + E4-timing.
   ```bash
@@ -411,7 +396,7 @@ PYTHONPATH=. python experiments/e5_beta_sweep/run_e5.py \
 > Updated at the end of each working session. Any agent can resume from here without
 > needing the conversation history.
 
-**Last updated:** 2026-06-24
+**Last updated:** 2026-06-25
 
 ### Verified results (already on disk)
 
@@ -419,13 +404,13 @@ PYTHONPATH=. python experiments/e5_beta_sweep/run_e5.py \
 |---|---|---|
 | E4 equivalence grid | `results/e4/equivalence/results.json` | `all_passed: true` — all 20 (T,r) cells at ~1e-16 relative error, float64, CPU |
 | E4 heatmap | `results/e4/equivalence/equivalence_heatmap.png` | Log-scale heatmap across T×r grid |
+| E1 equivalence on adapters | `results/e1/results.json` | `passed: true` — max_rel_error ~2.04e-15, float64, 64 layers |
 
 ### Scripts written but not yet run (waiting on hardware)
 
 | Script | Blocked on |
 |---|---|
-| `train_adapter.py` | Lab GPU access + `HF_TOKEN` with write scope |
-| `run_e1.py` | Trained adapters in `./adapters/` |
+
 | `run_e2.py` + `evaluate.py` | Trained adapters + Lab GPU |
 | `run_e3.py` | Lab GPU (bundle with E4-timing) |
 | `run_e4_timing.py` | Lab GPU (bundle with E3) |
