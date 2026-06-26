@@ -14,3 +14,6 @@ __pycache__/
 
 # Extension/Library caches
 unsloth_compiled_cache/
+
+calibrated-adapters/
+merged-adapters/
