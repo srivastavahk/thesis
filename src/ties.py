@@ -16,7 +16,7 @@ def merge_task_arithmetic(deltas: list[torch.Tensor]) -> torch.Tensor:
     """Simple average of updates."""
     return sum(deltas) / len(deltas)
 
-def merge_ties(deltas: list[torch.Tensor], density: float = 0.2) -> torch.Tensor:
+def merge_ties(deltas: list[torch.Tensor], density: float = 0.6) -> torch.Tensor:
     """TIES merging algorithm: TrIm, Elect Sign, Disjoint Merge."""
     trimmed_deltas = []
     for d in deltas:
@@ -50,7 +50,7 @@ def main():
     parser.add_argument("--adapters_dir", type=Path, required=True, help="Directory containing domain adapters.")
     parser.add_argument("--output_file", type=Path, required=True, help="Path to save dense state_dict (.pt).")
     parser.add_argument("--method", type=str, choices=["ta", "ties"], required=True, help="Merging method.")
-    parser.add_argument("--ties_density", type=float, default=0.2, help="Density for TIES merging.")
+    parser.add_argument("--ties_density", type=float, default=0.6, help="Density for TIES merging.")
     args = parser.parse_args()
 
     subdirs = sorted([p for p in args.adapters_dir.iterdir() if p.is_dir()], key=lambda p: p.name)
@@ -76,16 +76,20 @@ def main():
                 base_key = base_key[len(prefix):]
                 break
                 
-        deltas = []
+        A_list = []
+        B_list = []
         for sd in state_dicts:
-            B = sd[bk].float()
-            A = sd[ak].float()
-            deltas.append(B @ A)
+            B_list.append(sd[bk].float())
+            A_list.append(sd[ak].float())
             
         if args.method == "ta":
-            delta_W = merge_task_arithmetic(deltas)
+            merged_B = merge_task_arithmetic(B_list)
+            merged_A = merge_task_arithmetic(A_list)
         else:
-            delta_W = merge_ties(deltas, density=args.ties_density)
+            merged_B = merge_ties(B_list, density=args.ties_density)
+            merged_A = merge_ties(A_list, density=args.ties_density)
+            
+        delta_W = merged_B @ merged_A
             
         merged_state_dict[base_key] = delta_W.half() # Store as float16 to save space
         

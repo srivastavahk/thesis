@@ -144,8 +144,8 @@ Every result file must include:
 > **CRITICAL:** If you change ANY parameters during execution (e.g., datasets, domains, rank, metrics), you MUST immediately update `docs/fact-file.md` to ensure it remains the single source of truth for the Master Agent. Do not modify other agents' sections in this ledger.
 
 ### E0 Status
-- **Status:** Pending Execution
-- **Notes:** (Sub-agent to update)
+- **Status:** Completed
+- **Notes:** Subspace overlap verification executed. Results saved to `results/e0/`.
 
 ### E1 Status
 - **Status:** Completed
