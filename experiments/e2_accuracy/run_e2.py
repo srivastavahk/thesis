@@ -113,31 +113,78 @@ def load_all_adapters(
 
 
 # ---------------------------------------------------------------------------
-# Calibration modes — return delta_W per layer in float32
+# Calibration modes — return individual delta_W_t in float32
 # ---------------------------------------------------------------------------
 
-def apply_no_cal(B_list: List[torch.Tensor], A_list: List[torch.Tensor]) -> torch.Tensor:
-    """Plain Task Arithmetic: simple average of ΔW_t."""
-    T = len(B_list)
-    return sum(B @ A for B, A in zip(B_list, A_list)) / T
+def apply_no_cal(B_list: List[torch.Tensor], A_list: List[torch.Tensor]) -> List[torch.Tensor]:
+    """Plain updates (no calibration)."""
+    return [B @ A for B, A in zip(B_list, A_list)]
 
 
-def apply_pico(B_list: List[torch.Tensor], A_list: List[torch.Tensor]) -> torch.Tensor:
-    """Pico calibration then dense delta."""
+def apply_pico(B_list: List[torch.Tensor], A_list: List[torch.Tensor]) -> List[torch.Tensor]:
+    """Pico calibration. Returns list of individual delta_W_t."""
     from src.pico import merge_pico
     B_merged, A_merged = merge_pico(B_list, A_list)
-    return B_merged @ A_merged
+    T = len(B_list)
+    r = B_list[0].shape[1]
+    
+    # B_merged contains gamma/T factor. Multiply by T to get raw calibrated updates
+    deltas = [T * (B_merged[:, i*r:(i+1)*r] @ A_merged[i*r:(i+1)*r, :]) for i in range(T)]
+    return deltas
 
 
 def apply_wbp(
     B_list: List[torch.Tensor],
     A_list: List[torch.Tensor],
     beta: float = 1.0,
-) -> torch.Tensor:
-    """WBP calibration then dense delta."""
+) -> List[torch.Tensor]:
+    """WBP calibration. Returns list of individual delta_W_t."""
     from src.wbp import merge_wbp
     B_merged, A_merged = merge_wbp(B_list, A_list, beta=beta)
-    return B_merged @ A_merged
+    T = len(B_list)
+    r = B_list[0].shape[1]
+    
+    deltas = [T * (B_merged[:, i*r:(i+1)*r] @ A_merged[i*r:(i+1)*r, :]) for i in range(T)]
+    return deltas
+
+
+# ---------------------------------------------------------------------------
+# Downstream Mergers
+# ---------------------------------------------------------------------------
+
+def merge_task_arithmetic(deltas: List[torch.Tensor]) -> torch.Tensor:
+    """Simple average of updates."""
+    return sum(deltas) / len(deltas)
+
+
+def merge_ties(deltas: List[torch.Tensor], density: float = 0.2) -> torch.Tensor:
+    """TIES merging algorithm: TrIm, Elect Sign, Disjoint Merge."""
+    trimmed_deltas = []
+    for d in deltas:
+        k = int(density * d.numel())
+        if k == 0:
+            trimmed_deltas.append(torch.zeros_like(d))
+            continue
+        vals, _ = torch.topk(d.abs().flatten(), k)
+        thresh = vals[-1]
+        mask = (d.abs() >= thresh)
+        trimmed_deltas.append(d * mask)
+        
+    sum_trimmed = sum(trimmed_deltas)
+    elected_sign = torch.sign(sum_trimmed)
+    
+    merged_delta = torch.zeros_like(deltas[0])
+    count_matching = torch.zeros_like(deltas[0])
+    
+    for td in trimmed_deltas:
+        match_mask = (torch.sign(td) == elected_sign) & (elected_sign != 0) & (td != 0)
+        merged_delta[match_mask] += td[match_mask]
+        count_matching[match_mask] += 1
+        
+    valid = count_matching > 0
+    merged_delta[valid] = merged_delta[valid] / count_matching[valid]
+    
+    return merged_delta
 
 
 # ---------------------------------------------------------------------------
@@ -165,14 +212,16 @@ def patch_model_weights(
     model,
     layer_adapters: Dict[str, Dict[str, List[torch.Tensor]]],
     calibration_fn,
+    merger_fn,
     target_dtype: torch.dtype,
     **fn_kwargs,
 ) -> Dict[str, torch.Tensor]:
     """
     For each LoRA layer:
-      1. Compute delta_W using calibration_fn (in float32).
-      2. Add delta_W to the base model's frozen weight.
-      3. Stash the original weight so we can restore later.
+      1. Compute individual delta_W_t using calibration_fn.
+      2. Apply merger_fn to aggregate them into delta_W.
+      3. Add delta_W to the base model's frozen weight.
+      4. Stash the original weight so we can restore later.
 
     Returns a dict of {param_name: original_weight_tensor} for restoration.
     """
@@ -186,8 +235,11 @@ def patch_model_weights(
                 log.debug("Skipping layer %s — base key %s not found.", layer_key, base_key)
                 continue
 
-            # Compute delta_W in float32 for numerical stability
-            delta_W = calibration_fn(tensors["B"], tensors["A"], **fn_kwargs)  # (d_out, d_in) f32
+            # Compute individual delta_W_t in float32
+            deltas = calibration_fn(tensors["B"], tensors["A"], **fn_kwargs)
+            
+            # Apply merger function (TA or TIES)
+            delta_W = merger_fn(deltas)
 
             # Locate the parameter
             param = None
@@ -321,25 +373,30 @@ def main():
     log.info("Base model loaded.")
 
     # ------------------------------------------------------------------
-    # 3. Evaluate each calibration mode
+    # 3. Evaluate each calibration mode x merger mode
     # ------------------------------------------------------------------
-    calibration_modes = {
-        "no_cal":   (apply_no_cal,  {}),
-        "pico":     (apply_pico,    {}),
-        "wbp_beta1":(apply_wbp,     {"beta": 1.0}),
-    }
+    calibrations = [
+        ("No-Cal", apply_no_cal, {}),
+        ("Pico",   apply_pico,   {}),
+        ("WBP",    apply_wbp,    {"beta": 1.0}),
+    ]
+    mergers = [
+        ("TA", merge_task_arithmetic),
+        ("TIES", lambda d: merge_ties(d, density=args.ties_density)),
+    ]
 
-    out_path = args.output_dir / "results.json"
-    if out_path.exists():
-        log.info("Found existing results at %s. Resuming...", out_path)
-        with open(out_path, "r") as f:
-            existing_data = json.load(f)
-            all_results = existing_data.get("results", {})
-    else:
-        all_results = {}
+    out_file = args.output_dir / "results.json"
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    
+    all_scores = {}
+    if out_file.exists():
+        with open(out_file, "r") as f:
+            try:
+                all_scores = json.load(f)["results"]
+            except (json.JSONDecodeError, KeyError):
+                all_scores = {}
 
     def save_progress():
-        args.output_dir.mkdir(parents=True, exist_ok=True)
         results = {
             "experiment":  "E2",
             "hardware":    "RTX 6000 24GB",
@@ -348,56 +405,58 @@ def main():
             "T":           T,
             "domain_names": domain_names,
             "seed":        args.seed,
-            "results":     all_results,
+            "results":     all_scores,
         }
-        with open(out_path, "w") as f:
+        with open(out_file, "w") as f:
             json.dump(results, f, indent=2)
 
-    for mode_name, (fn, fn_kwargs) in calibration_modes.items():
-        if mode_name not in all_results:
-            all_results[mode_name] = {}
+    for cal_name, cal_fn, cal_kwargs in calibrations:
+        for merger_name, merger_fn in mergers:
+            regime_name = f"{cal_name} + {merger_name}"
+            
+            if regime_name not in all_scores:
+                all_scores[regime_name] = {}
+                
+            expected_benchmarks = ["gsm8k_exact_match", "finance_acc_norm", "medmcqa_accuracy", "humaneval_pass_at_1"]
+            if all(b in all_scores[regime_name] for b in expected_benchmarks):
+                log.info("Regime [%s] already fully completed. Skipping.", regime_name)
+                continue
 
-        expected_benchmarks = ["gsm8k_exact_match", "finance_acc_norm", "medmcqa_accuracy", "humaneval_pass_at_1"]
-        if all(b in all_results[mode_name] for b in expected_benchmarks):
-            log.info("Mode %s already fully completed. Skipping.", mode_name)
-            continue
+            log.info("=" * 60)
+            log.info("Evaluating Regime: %s", regime_name)
+            log.info("=" * 60)
+            
+            t0 = time.perf_counter()
 
-        log.info("-" * 50)
-        log.info("Mode: %s", mode_name)
-        t0 = time.perf_counter()
+            # Patch weights
+            originals = patch_model_weights(
+                model, layer_adapters, cal_fn, merger_fn, target_dtype=model_dtype, **cal_kwargs
+            )
+            log.info("  Weight patching complete. Running benchmarks ...")
 
-        # Patch weights
-        originals = patch_model_weights(
-            model, layer_adapters, fn, target_dtype=model_dtype, **fn_kwargs
-        )
-        log.info("  Weight patching complete. Running benchmarks ...")
+            # Evaluate
+            with torch.no_grad():
+                scores = run_eval_suite(model, tokenizer, args.seed, all_scores[regime_name], save_progress)
 
-        # Evaluate
-        with torch.no_grad():
-            scores = run_eval_suite(model, tokenizer, args.seed, all_results[mode_name], save_progress)
+            # Restore weights
+            restore_model_weights(model, originals)
+            del originals
+            torch.cuda.empty_cache()
 
-        # Restore weights
-        restore_model_weights(model, originals)
-        del originals
-        torch.cuda.empty_cache()
-
-        elapsed = time.perf_counter() - t0
-        log.info("Mode %s complete in %.1f min. Average: %.4f",
-                 mode_name, elapsed / 60, scores.get("average", 0.0))
+            elapsed = time.perf_counter() - t0
+            log.info("Regime %s complete in %.1f min. Average: %.4f",
+                     regime_name, elapsed / 60, scores.get("average", 0.0))
 
     # ------------------------------------------------------------------
-    # 4. Write results JSON
+    # 4. Summary
     # ------------------------------------------------------------------
-    save_progress()
-    log.info("Results successfully written to %s", out_path)
-
-    # Summary table
+    log.info("Results successfully written to %s", out_file)
     log.info("=" * 60)
     log.info("SUMMARY")
-    log.info("%-12s  %-8s  %-8s  %-8s  %-8s  %-8s",
+    log.info("%-20s  %-8s  %-8s  %-8s  %-8s  %-8s",
              "Mode", "GSM8K", "HumanEv", "Finance", "MedMCQA", "Avg")
-    for mode, s in all_results.items():
-        log.info("%-12s  %-8.4f  %-8.4f  %-8.4f  %-8.4f  %-8.4f",
+    for mode, s in all_scores.items():
+        log.info("%-20s  %-8.4f  %-8.4f  %-8.4f  %-8.4f  %-8.4f",
                  mode,
                  s.get("gsm8k_exact_match", 0.0),
                  s.get("humaneval_pass_at_1", 0.0),

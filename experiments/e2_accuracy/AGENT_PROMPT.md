@@ -9,7 +9,7 @@
 
 Read `../SHARED_CONTEXT.md` for full mathematical background, notation, and existing code.
 
-**E2 Objective:** Show that WBP-merged models match Pico-merged models on downstream benchmark accuracy end-to-end — not just at the operator level. Both should also beat "no calibration" (plain Task Arithmetic).
+**E2 Objective:** Show that WBP-merged models match Pico-merged models on downstream benchmark accuracy end-to-end — not just at the operator level. Evaluate this performance across both **Task Arithmetic** and **TIES** downstream merging methods. Both should beat "no preconditioning".
 
 **Hardware note:** This runs on the Lab RTX 6000 (24 GB VRAM). `unsloth/Meta-Llama-3.1-8B` at bf16 uses ~16 GB, leaving ~8 GB headroom for activations. Keep inference batch size ≤ 4 to stay within VRAM.
 

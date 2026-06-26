@@ -1,4 +1,4 @@
-# Agent Prompt: E4 — Scaling vs. T and Rank r
+# Agent Prompt: E4 — Scaling vs. T and Rank r (Phase 3)
 
 > **Platform:** Two sub-parts with different hardware requirements:
 >   - **Equivalence grid check:** Mac Mini M4 (CPU) — runs on synthetic matrices

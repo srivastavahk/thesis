@@ -7,12 +7,13 @@
 
 ## Project Summary
 
-M.Tech thesis. The project compares two mathematically equivalent methods for calibrating LoRA adapters before merging:
+M.Tech thesis: **"Woodbury B-Space Preconditioning: Fast and Generalized B-Space Calibration for Model Merging"**.
 
-- **Pico** (prior work, Tang & Yang): uses SVD over the stacked B-matrix `B_all` to downscale shared directions.
-- **WBP** (this thesis): replaces that SVD with a closed-form Woodbury/Tikhonov filter on a much smaller Gram matrix, proven exactly equivalent via the Woodbury matrix identity.
-
-**Both methods return calibrated B matrices for Task Arithmetic merging.** WBP's claim is that it achieves the same result without the GPU-bottlenecked SVD.
+The project defends a novel algorithmic approach to LoRA interference via four phases:
+1. **Verification (E0):** Verifying the original claims of B-space overlap from prior work.
+2. **Novel Algorithm (E1):** Introducing WBP (Woodbury B-Space Preconditioning) to calibrate adapters efficiently without an SVD.
+3. **Benchmarking & Equivalence (E2, E3, E4):** Proving WBP is mathematically identical to Pico, quantifying its computational advantages, and benchmarking downstream accuracy across both **Task Arithmetic** and **TIES** merging techniques.
+4. **Generalization (E5):** Relaxing the strict Pico-equivalence constraint to explore a tunable calibration parameter ($\beta$).
 
 ---
 

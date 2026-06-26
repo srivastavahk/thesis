@@ -1,4 +1,4 @@
-# Agent Prompt: E1 — Operator-level Equivalence on Real Adapters
+# Agent Prompt: E1 — Operator-level Equivalence (Phase 2)
 
 > **Platform:** Mac Mini M4 (CPU / MPS — no CUDA required)
 > **Your task:** Write a script that loads real trained LoRA adapters and verifies that Pico and WBP produce numerically identical calibrated B matrices on every layer.

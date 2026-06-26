@@ -1,16 +1,15 @@
 # Experiments Plan: Validating and Extending WBP for LoRA Merging
 
-**Scope for this thesis:** Experiments **E1–E5** below are in scope and will be executed.
+**Scope for this thesis:** Experiments **E0–E5** below are in scope and will be executed.
 **E6–E13** are retained in this document as a deferred roadmap (cited in the thesis's Future Work
 section) but are **not** executed as part of this work. They're kept here, condensed, so the scope
 decision is traceable and so they're ready to pick up if time/compute allows or as follow-on work.
 
-**Context.** Pico (Tang & Yang) calibrates the output-side LoRA matrix $B$ before merging, using an
-SVD over the stacked $B_{all} = [B_1,\dots,B_T]$. WBP replaces that SVD with a closed-form Tikhonov
-filter, proven exactly equivalent via the Woodbury identity. The math is verified. E1–E5 establish:
-(a) the equivalence holds on real adapters, (b) it holds end-to-end on accuracy, (c) it's actually
-faster, and (d) a first look at whether decoupling the filter from the exact-match point can do
-better than Pico.
+**Context.** The thesis follows a 4-phase narrative:
+1. **Phase 1 (E0):** Verify the original claims of B-space overlap from prior work.
+2. **Phase 2 (E1):** Introduce WBP and verify operator-level equivalence to Pico on real adapters.
+3. **Phase 3 (E2-E4):** Benchmark downstream accuracy (across Task Arithmetic and TIES), and quantify WBP's computational advantage over Pico.
+4. **Phase 4 (E5):** Explore generalizing the calibration filter via the $\beta$ parameter.
 
 ---
 
@@ -18,8 +17,9 @@ better than Pico.
 
 | ID | Name | Compute | Depends on |
 |----|------|---------|------------|
+| E0 | Subspace overlap verification | Low | Trained adapters |
 | E1 | Operator-level equivalence on real adapters | Low | Trained adapters (small scale OK) |
-| E2 | Downstream accuracy parity (No-Cal / Pico / WBP) | Med | Same adapters as E1 |
+| E2 | Downstream accuracy parity (No-Cal / Pico / WBP) | Med | Same adapters as E1 (Task Arithmetic + TIES) |
 | E3 | Wall-clock & memory scaling vs. $d_{out}$ | Low | Synthetic matrices only — no training needed |
 | E4 | Scaling vs. $T$ and rank $r$ | Med | Synthetic timing (cheap) + reuse E2's adapters for the accuracy-side curve |
 | E5 | Decoupled-$\lambda$ sweep ($\beta$-WBP), exploratory | Med | Reuse E2's adapters/pipeline |
@@ -65,7 +65,7 @@ reproduce the paper's absolute numbers.
 
 **Steps.**
 1. Train/obtain the $T=4$ adapters (same ones as E1).
-2. Run **Task Arithmetic** with: (a) no calibration, (b) Pico, (c) WBP.
+2. Run both **Task Arithmetic** and **TIES** with: (a) no calibration, (b) Pico, (c) WBP.
 3. Evaluate all three on the same benchmarks.
 4. Report per-domain and overall averages.
 

@@ -8,9 +8,9 @@
 ## Context
 
 Read `../SHARED_CONTEXT.md` for full mathematical background, notation, and existing code.
-Read `experiments/e2_accuracy/AGENT_PROMPT.md` — E5 reuses the E2 pipeline verbatim, adding only a β loop.
+Read `experiments/e2_accuracy/AGENT_PROMPT.md` — E5 reuses the E2 pipeline verbatim, adding only a β loop.# E5 — Decoupled-lambda Sweep (Phase 4)
 
-**E5 Objective:** Explore whether moving away from the exact-Pico-match λ (i.e., β=1) can improve accuracy. This is framed as **exploratory** — no formal tuning protocol, no cross-domain generalization claims.
+**E5 Objective:** Generalize the calibration. Take a first, exploratory look at whether decoupling the WBP filter from the exact Pico-match constraint ($\beta=1$) can improve accuracy. Evaluated via Task Arithmetic (we do not need to run TIES here since it's exploratory). This is framed as **exploratory** — no formal tuning protocol, no cross-domain generalization claims.
 
 The β parameter scales the Tikhonov regularization:
 ```

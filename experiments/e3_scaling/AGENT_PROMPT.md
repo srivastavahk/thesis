@@ -1,4 +1,4 @@
-# Agent Prompt: E3 — Wall-Clock & Memory Scaling vs. d_out
+# Agent Prompt:# E3 — Wall-clock & Memory Scaling vs d_out (Phase 3)
 
 > **Platform:** Lab RTX 6000 (24 GB VRAM, CUDA)
 > **Your task:** Write a self-contained Python timing benchmark script that sweeps `d_out` and compares wall-clock time and peak GPU memory between Pico (thin SVD) and WBP (Gram + Woodbury) using synthetic matrices.
@@ -6,6 +6,8 @@
 ---
 
 ## Context
+
+**E3 Objective:** Quantify the computational advantage of WBP over Pico. Show that avoiding the SVD yields massive wall-clock speedups for large $d_{out}$ and large $T$, while maintaining linear scaling. benchmark script that sweeps `d_out` and compares wall-clock time and peak GPU memory between Pico (thin SVD) and WBP (Gram + Woodbury) using synthetic matrices.
 
 Read `../SHARED_CONTEXT.md` for full mathematical background, notation, and existing code.
 

@@ -1,21 +1,10 @@
 # Thesis Outline
 
-**Scope note (updated):** this outline reflects a thesis built on Experiments **E1–E5** only
-(see `experiments.md`). E6–E13 are referenced as Future Work, not as completed results. This
-changes the safe framing of your contribution — see the title guidance below.
+**Scope note (updated):** this outline reflects a thesis built on Experiments **E0–E5** only
+(see `experiments.md`). E6–E13 are referenced as Future Work, not as completed results.
 
-**Working title (pick one, or refine later):**
-1. *Woodbury B-Space Preconditioning: A Closed-Form Alternative to SVD-Based Calibration for LoRA Merging*
-2. *Beyond Spectral Binning: A Generalized Tikhonov Framework for Pre-Merge LoRA Calibration*
-3. *Closing the Loop on B-Space Crowding: Efficient and Tunable Calibration for LoRA Adapter Merging*
-
-**Recommendation given the E1–E5-only scope: lead with Title 1.** Without a tuning protocol (E6)
-or a full baseline comparison (E7), your $\beta$-sweep (E5) is exploratory evidence, not a validated
-tuned method — titles 2/3 oversell that piece. Title 1's claim (closed-form equivalence + efficiency)
-is fully supported by E1–E4 alone, with the $\beta$-sweep positioned as a forward-looking finding in
-the Discussion/Future Work rather than the headline. Revisit this choice only if E5 produces an
-unusually clean, large, and consistent peak away from $\beta=1$ — even then, hedge the claim per the
-limitations below.
+**Chosen Title:**
+*Woodbury B-Space Preconditioning: Fast and Generalized B-Space Calibration for Model Merging*
 
 **One-line thesis statement** (fill in once results are in):
 > *"Pico's discrete spectral calibration is a special case of a continuous Tikhonov-regularized
@@ -43,14 +32,13 @@ phenomenon in one paragraph + one figure.
 way a production merging pipeline would want. State this precisely: not "Pico doesn't work," but
 "Pico's calibration step is a computational bottleneck at scale."
 
-1.3 **Research Objectives** (these become your evaluation criteria in Ch.6 — keep them matched
-1:1 to what E1–E5 can actually answer):
-- O1: Derive an SVD-free reformulation of Pico's calibration that is provably equivalent.
-- O2: Empirically verify the equivalence holds on real adapters and end-to-end accuracy, not just
-  in theory (E1, E2).
-- O3: Quantify the computational advantage over the SVD route (E3, E4).
-- O4: Take a first, exploratory look at whether decoupling the filter from the exact-match
-  constraint can move accuracy (E5) — phrased as an open question, not a guaranteed contribution.
+1.3 **Research Objectives** (these become your evaluation criteria in Ch.6):
+- O1: Verify the original claims of subspace overlap (E0).
+- O2: Derive an SVD-free reformulation of Pico's calibration that is provably equivalent, and empirically verify the equivalence holds on real adapters (E1).
+- O3: Evaluate end-to-end downstream merging performance across Task Arithmetic and TIES (E2).
+- O4: Quantify the computational advantage over the SVD route (E3, E4).
+- O5: Take a first, exploratory look at whether decoupling the filter from the exact-match
+  constraint can move accuracy (E5).
 
 1.4 **Contributions**
 - A closed-form Tikhonov-filter equivalent to Pico's spectral binning (Theorem, §4.2).
@@ -146,8 +134,7 @@ Core Space are **not** re-implemented; if referenced at all, cite the source pap
 Discussion as context only, explicitly labeled as obtained under a different setup/scale and not
 directly comparable.
 
-5.3 **Downstream Merger** — **Task Arithmetic only.** State explicitly that TIES and TSV-M are not
-evaluated in this thesis (deferred as E8) and that all results are scoped to Task Arithmetic.
+5.3 **Downstream Merger** — **Task Arithmetic and TIES.** State explicitly that both methods are used to benchmark the calibration techniques.
 
 5.4 **Evaluation Benchmarks and Metrics** — list per domain, scoring method.
 

@@ -10,16 +10,13 @@
 
 ## 1. Project Summary
 
-M.Tech thesis project. Builds on **"Crowded in B-Space"** (Tang & Yang) — a method called **Pico**
-that fixes LoRA-merging interference by calibrating the output-side matrix $B$ before merging,
-using an SVD over the stacked $B$'s of all tasks. This project's contribution is **WBP (Woodbury
-B-Space Preconditioning)**: an SVD-free reformulation of Pico's calibration, proven exactly
-equivalent via the Woodbury matrix identity, plus an exploratory generalization (a tunable
-$\beta$ parameter) that frames Pico as one specific point in a larger family.
+M.Tech thesis project: **"Woodbury B-Space Preconditioning: Fast and Generalized B-Space Calibration for Model Merging"**.
 
-**Core claim being built toward:** WBP computes the *identical* calibration operator as Pico
-without ever forming or inverting a $d_{out}\times d_{out}$ matrix, replacing an iterative SVD with
-pure GEMM operations on a much smaller $Tr\times Tr$ matrix ($T$ = number of tasks, $r$ = LoRA rank).
+This project defends a novel approach to LoRA merging interference through a four-phase narrative:
+1. **Verification (E0):** Verifying the claims of subspace overlap in the original "Crowded in B-Space" paper by checking real adapters using their proposed metrics.
+2. **Novel Algorithm (E1):** Proposing Woodbury B-Space Preconditioning (WBP), an SVD-free algorithm that suppresses shared directions efficiently using pure GEMM operations on a small $Tr\times Tr$ Gram matrix.
+3. **Benchmarking & Equivalence (E2, E3, E4):** Empirically proving the exact mathematical equivalence between WBP and Pico, quantifying the computational advantage of WBP over Pico, and benchmarking downstream merging performance using both **Task Arithmetic** and **TIES** across three regimes (No Preconditioning, Pico, WBP).
+4. **Generalization (E5):** Decoupling our method from the strict Pico equivalence constraint via a tunable $\beta$ parameter to study the preliminary effects of over/under-calibrating subspace interference.
 
 ---
 
@@ -93,19 +90,23 @@ alternative, (b) pure GEMMs parallelize far better on GPU than iterative SVD.
 
 ## 5. Current Scope
 
-**In scope (commit effort here):** Experiments E1–E5 only.
-- E1: operator-level equivalence on real trained adapters
-- E2: downstream accuracy parity (No-Calibration vs. Pico vs. WBP, **Task Arithmetic only**)
-- E3: wall-clock/memory scaling vs. $d_{out}$ (synthetic, no training needed)
-- E4: scaling vs. $T$ and rank $r$
-- E5: exploratory $\beta$ sweep (no tuning protocol, no full baseline table)
+**In scope (commit effort here):** Experiments E0–E5.
+- **Phase 1 (Verification):**
+  - E0: Subspace overlap verification on real trained adapters.
+- **Phase 2 (Algorithm & Equivalence):**
+  - E1: Operator-level equivalence between WBP and Pico on real adapters.
+- **Phase 3 (Benchmarking & Computational Scaling):**
+  - E2: Downstream accuracy parity evaluated using **both Task Arithmetic and TIES** merging (No Preconditioning vs. Pico vs. WBP).
+  - E3: Wall-clock/memory scaling vs. $d_{out}$ (synthetic, no training needed).
+  - E4: Scaling vs. $T$ and rank $r$.
+- **Phase 4 (Generalization):**
+  - E5: Exploratory $\beta$ sweep (no tuning protocol, no full baseline table).
 
 **Explicitly out of scope** (do not silently expand into these without being asked):
-- TIES / TSV-M as downstream mergers (only Task Arithmetic is being tested)
-- Re-implementing DARE, DELLA, KnOTS, or Core Space as baselines
-- Cross-backbone transfer experiments
-- A formal $\beta$-selection/tuning protocol
-- Conditioning stress tests / formal edge-case test suite beyond the basic $T=1$ guard
+- Re-implementing DARE, DELLA, KnOTS, or Core Space as baselines.
+- Cross-backbone transfer experiments.
+- A formal $\beta$-selection/tuning protocol.
+- Conditioning stress tests / formal edge-case test suite beyond the basic $T=1$ guard.
 
 If asked to "also do X" where X is one of the above, flag that it's outside current scope per
 `experiments.md` rather than just doing it — the thesis framing depends on this boundary being
