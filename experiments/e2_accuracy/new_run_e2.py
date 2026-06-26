@@ -126,16 +126,16 @@ def main():
     print("\n" + "="*60)
     print("FINAL SUMMARY (All 6 Configurations)")
     print("="*60)
-    print(f"{'Mode':<15} | {'GSM8K':<8} | {'HumanEv':<8} | {'MacroEcon':<9} | {'MedMCQA':<8}")
+    print(f"{'Mode':<15} | {'GSM8K':<8} | {'HumanEv':<8} | {'MacroEcon':<9} | {'MedQA':<8}")
     print("-"*60)
     
     for name, s in all_scores.items():
         gsm8k = s.get("gsm8k", {}).get("exact_match,none-0", 0.0)
         humaneval = s.get("humaneval", {}).get("pass@1,none-0", 0.0)
         macro = s.get("mmlu_high_school_macroeconomics_generative", {}).get("exact_match,none-0", 0.0)
-        medmcqa = s.get("medmcqa", {}).get("acc,none-0", 0.0)
+        medqa = s.get("medqa_4options", {}).get("acc,none-0", 0.0)
         
-        print(f"{name:<15} | {gsm8k:<8.4f} | {humaneval:<8.4f} | {macro:<9.4f} | {medmcqa:<8.4f}")
+        print(f"{name:<15} | {gsm8k:<8.4f} | {humaneval:<8.4f} | {macro:<9.4f} | {medqa:<8.4f}")
 
 if __name__ == "__main__":
     main()

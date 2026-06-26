@@ -56,9 +56,9 @@ def main():
     # 4. Evaluate
     eval_model = HFLM(pretrained=model, tokenizer=tokenizer)
     
-    # Thesis specific tasks: gsm8k, humaneval, mmlu_high_school_macroeconomics_generative, medmcqa
+    # Thesis specific tasks: gsm8k, humaneval, mmlu_high_school_macroeconomics_generative, medqa_4options
     # Note: These exact task names must be available in lm_eval
-    tasks = ["gsm8k", "humaneval", "mmlu_high_school_macroeconomics_generative", "medmcqa"]
+    tasks = ["gsm8k", "humaneval", "mmlu_high_school_macroeconomics_generative", "medqa_4options"]
 
     print(f"Starting benchmark for tasks: {tasks} ...")
     
@@ -70,6 +70,7 @@ def main():
         task_manager=task_manager,
         batch_size="auto",
         device="cuda",
+        limit=150,
         confirm_run_unsafe_code=True
     )
 
