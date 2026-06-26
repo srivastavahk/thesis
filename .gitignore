@@ -1,0 +1,16 @@
+.hf_cache/
+.venv/
+checkpoints/
+env.sh
+logs/
+
+# Project specific folders
+adapters/
+results/
+
+# Python caching
+__pycache__/
+*.pyc
+
+# Extension/Library caches
+unsloth_compiled_cache/

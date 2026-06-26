@@ -153,11 +153,12 @@ def format_messages(row: dict, domain: str) -> dict:
 
 def train(domain: str):
     import gc
+    from unsloth import FastLanguageModel
+    from unsloth.chat_templates import get_chat_template, train_on_responses_only
     from datasets import load_dataset
     from transformers import DataCollatorForSeq2Seq
     from trl import SFTTrainer, SFTConfig
-    from unsloth import FastLanguageModel
-    from unsloth.chat_templates import get_chat_template, train_on_responses_only
+    
 
     # Explicitly clear CUDA memory before starting
     gc.collect()
@@ -186,7 +187,7 @@ def train(domain: str):
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name = BASE_MODEL,
         max_seq_length = MAX_SEQ_LENGTH,
-        dtype = torch.bfloat16,
+        dtype = torch.float16,
         load_in_4bit = False,  # we are doing bf16 LoRA
     )
     if tokenizer.pad_token is None:
@@ -270,7 +271,7 @@ def train(domain: str):
         lr_scheduler_type="cosine",
         warmup_steps=WARMUP_STEPS,
         optim="paged_adamw_8bit",          # saves ~2 GB VRAM vs. adamw_torch
-        bf16=True,
+        fp16=True,
         logging_steps=50,
         save_steps=1000,
         save_total_limit=3,
@@ -279,7 +280,7 @@ def train(domain: str):
         report_to="none",
         seed=SEED,
         dataset_text_field="text",
-        max_seq_length=MAX_SEQ_LENGTH,
+        max_length=MAX_SEQ_LENGTH,
         packing=False,
     )
 
