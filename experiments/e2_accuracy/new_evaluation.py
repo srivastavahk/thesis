@@ -65,6 +65,7 @@ def main():
         tasks=tasks,
         batch_size="auto",
         device="cuda",
+        include_path="experiments/e2_accuracy/custom_tasks",
         confirm_run_unsafe_code=True
     )
 
