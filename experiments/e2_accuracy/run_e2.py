@@ -217,16 +217,29 @@ def restore_model_weights(model, original_weights: Dict[str, torch.Tensor]):
 # Evaluation pipeline
 # ---------------------------------------------------------------------------
 
-def run_eval_suite(model, tokenizer, seed: int) -> dict:
+def run_eval_suite(model, tokenizer, seed: int, scores: dict, save_cb) -> dict:
     sys.path.insert(0, str(Path(__file__).parent))
     from evaluate import eval_gsm8k, eval_humaneval, eval_finance, eval_medmcqa
 
-    scores = {}
-    scores["gsm8k_exact_match"]     = eval_gsm8k(model, tokenizer, device=None, seed=seed)
-    scores["humaneval_pass_at_1"]   = eval_humaneval(model, tokenizer, device=None, seed=seed)
-    scores["finance_acc_norm"]      = eval_finance(model, tokenizer, device=None, seed=seed)
-    scores["medmcqa_accuracy"]      = eval_medmcqa(model, tokenizer, device=None, seed=seed)
-    scores["average"] = sum(scores.values()) / len(scores)
+    benchmarks = [
+        ("gsm8k_exact_match", eval_gsm8k),
+        ("finance_acc_norm", eval_finance),
+        ("medmcqa_accuracy", eval_medmcqa),
+        ("humaneval_pass_at_1", eval_humaneval),
+    ]
+
+    for b_name, b_func in benchmarks:
+        if b_name not in scores:
+            log.info("  Running %s ...", b_name)
+            scores[b_name] = b_func(model, tokenizer, device=None, seed=seed)
+            save_cb()
+        else:
+            log.info("  Skipping %s (already completed)", b_name)
+
+    if all(b_name in scores for b_name, _ in benchmarks):
+        scores["average"] = sum(scores[b_name] for b_name, _ in benchmarks) / len(benchmarks)
+        save_cb()
+
     return scores
 
 
@@ -316,8 +329,39 @@ def main():
         "wbp_beta1":(apply_wbp,     {"beta": 1.0}),
     }
 
-    all_results = {}
+    out_path = args.output_dir / "results.json"
+    if out_path.exists():
+        log.info("Found existing results at %s. Resuming...", out_path)
+        with open(out_path, "r") as f:
+            existing_data = json.load(f)
+            all_results = existing_data.get("results", {})
+    else:
+        all_results = {}
+
+    def save_progress():
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+        results = {
+            "experiment":  "E2",
+            "hardware":    "RTX 6000 24GB",
+            "base_model":  args.base_model,
+            "dtype":       args.dtype,
+            "T":           T,
+            "domain_names": domain_names,
+            "seed":        args.seed,
+            "results":     all_results,
+        }
+        with open(out_path, "w") as f:
+            json.dump(results, f, indent=2)
+
     for mode_name, (fn, fn_kwargs) in calibration_modes.items():
+        if mode_name not in all_results:
+            all_results[mode_name] = {}
+
+        expected_benchmarks = ["gsm8k_exact_match", "finance_acc_norm", "medmcqa_accuracy", "humaneval_pass_at_1"]
+        if all(b in all_results[mode_name] for b in expected_benchmarks):
+            log.info("Mode %s already fully completed. Skipping.", mode_name)
+            continue
+
         log.info("-" * 50)
         log.info("Mode: %s", mode_name)
         t0 = time.perf_counter()
@@ -330,7 +374,7 @@ def main():
 
         # Evaluate
         with torch.no_grad():
-            scores = run_eval_suite(model, tokenizer, args.seed)
+            scores = run_eval_suite(model, tokenizer, args.seed, all_results[mode_name], save_progress)
 
         # Restore weights
         restore_model_weights(model, originals)
@@ -339,27 +383,13 @@ def main():
 
         elapsed = time.perf_counter() - t0
         log.info("Mode %s complete in %.1f min. Average: %.4f",
-                 mode_name, elapsed / 60, scores["average"])
-        all_results[mode_name] = scores
+                 mode_name, elapsed / 60, scores.get("average", 0.0))
 
     # ------------------------------------------------------------------
     # 4. Write results JSON
     # ------------------------------------------------------------------
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    results = {
-        "experiment":  "E2",
-        "hardware":    "RTX 6000 24GB",
-        "base_model":  args.base_model,
-        "dtype":       args.dtype,
-        "T":           T,
-        "domain_names": domain_names,
-        "seed":        args.seed,
-        "results":     all_results,
-    }
-    out_path = args.output_dir / "results.json"
-    with open(out_path, "w") as f:
-        json.dump(results, f, indent=2)
-    log.info("Results written to %s", out_path)
+    save_progress()
+    log.info("Results successfully written to %s", out_path)
 
     # Summary table
     log.info("=" * 60)
@@ -369,11 +399,11 @@ def main():
     for mode, s in all_results.items():
         log.info("%-12s  %-8.4f  %-8.4f  %-8.4f  %-8.4f  %-8.4f",
                  mode,
-                 s["gsm8k_exact_match"],
-                 s["humaneval_pass_at_1"],
-                 s["finance_acc_norm"],
-                 s["medmcqa_accuracy"],
-                 s["average"])
+                 s.get("gsm8k_exact_match", 0.0),
+                 s.get("humaneval_pass_at_1", 0.0),
+                 s.get("finance_acc_norm", 0.0),
+                 s.get("medmcqa_accuracy", 0.0),
+                 s.get("average", 0.0))
 
 
 if __name__ == "__main__":
