@@ -26,6 +26,24 @@ decision is traceable and so they're ready to pick up if time/compute allows or 
 
 ---
 
+## E0. Subspace overlap verification
+
+**Objective.** Verify the core claim from the original Pico paper: independently trained LoRA adapters exhibit significantly higher subspace overlap/interference in their $B$ matrices than in their $A$ matrices, necessitating $B$-space preconditioning.
+
+**Setup.** 
+- Extract a broad, random sample of independently trained PEFT LoRA models from the Hugging Face Hub (filtering out models from the same author to ensure independent training).
+- Group adapters into buckets matching by base model, rank ($r \in \{8, 16, 32, 64\}$), and target modules.
+
+**Steps.**
+1. For every valid pair of adapters within a bucket, extract the $A_t$ and $B_t$ matrices for shared layers and modules.
+2. Compute the subspace overlap between $A_1$ and $A_2$ (denoted $O_A$) and $B_1$ and $B_2$ (denoted $O_B$) using QR decomposition and the squared Frobenius norm.
+3. Discard the pair if the overlap in both the $A$ and $B$ matrices is close to 1 (this excludes near-identical adapters published by different users or checkpoints from the same run).
+4. Aggregate the results across modules and layers to calculate the mean $O_A$, mean $O_B$, and the gap ($O_B - O_A$).
+
+**Expected result.** The aggregated gap ($O_B - O_A$) should be consistently positive and statistically significant, confirming that $B$-spaces suffer from substantially more crowding than $A$-spaces.
+
+---
+
 ## E1. Operator-level equivalence on real adapters
 
 **Objective.** Confirm $S_{wbp} = S_{pico}$ — and therefore $\tilde B_t^{wbp} = \tilde B_t^{pico}$ —

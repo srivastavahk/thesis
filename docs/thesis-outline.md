@@ -141,42 +141,41 @@ directly comparable.
 5.5 **Hardware and Implementation Details** — GPU(s), precision, timing methodology (warmup,
 repeats, synchronization before stopping the clock).
 
-5.6 **Experiment-to-Chapter Mapping** — small table: E1→§6.1, E2→§6.2, E3/E4→§6.3, E5→§6.4.
+5.6 **Experiment-to-Chapter Mapping** — small table: E0→§6.1, E1→§6.2, E2→§6.3, E3/E4→§6.4, E5→§6.5.
 
 ---
 
 ## Chapter 6 — Results and Analysis
 *(~10–14 pages)*
 
-6.1 **Operator-Level Equivalence (E1)** — table of max/mean error between $S_{pico}$ and $S_{wbp}$
+6.1 **Subspace Overlap Verification (E0)** — report the empirical gap ($O_B - O_A$) on randomly sampled Hugging Face adapters; confirms the original paper's premise of $B$-space crowding.
+
+6.2 **Operator-Level Equivalence (E1)** — table of max/mean error between $S_{pico}$ and $S_{wbp}$
 across layers; empirically confirms the §4.2 theorem.
 
-6.2 **Downstream Accuracy Parity (E2)** — No-Calibration vs. Pico vs. WBP, Task Arithmetic, your
-own trained adapters. State explicitly that this is a 3-way comparison, not a reproduction of the
-source paper's full Table 1.
+6.3 **Downstream Accuracy Parity (E2)** — No-Calibration vs. Pico vs. WBP across both Task Arithmetic and TIES. State explicitly that this is a 6-way comparison using your own trained adapters.
 
-6.3 **Computational Efficiency (E3, E4)** — wall-clock/memory vs. $d_{out}$ (headline plot);
+6.4 **Computational Efficiency (E3, E4)** — wall-clock/memory vs. $d_{out}$ (headline plot);
 scaling vs. $T$ and rank $r$.
 
-6.4 **Exploratory $\beta$-WBP Sweep (E5)** — accuracy vs. $\beta$ curve(s) for Task Arithmetic.
+6.5 **Exploratory $\beta$-WBP Sweep (E5)** — accuracy vs. $\beta$ curve(s) for Task Arithmetic.
 Report whichever outcome occurred (peak / flat / monotonic) plainly, and interpret it honestly —
 this is the section most likely to draw examiner questions, so the interpretation paragraph matters
 more than the plot itself. Explicitly state what this result does and doesn't license you to claim
 (see "what not to claim" in `experiments.md`'s E5 entry).
 
-6.5 **Synthesis** — short closing subsection tying 6.1–6.4 together: equivalence holds, parity
-holds, efficiency gain is real and characterized, and the $\beta$ family looks [promising /
-inconclusive / not advantageous] pending the formal protocol described in Ch.8.
+6.6 **Synthesis** — short closing subsection tying 6.1–6.5 together: crowding is real (E0), equivalence holds (E1), parity holds across mergers (E2), efficiency gain is real and characterized (E3/E4), and the $\beta$ family looks [promising /
+inconclusive / not advantageous] pending the formal protocol described in Ch.8 (E5).
 
 ---
 
 ## Chapter 7 — Discussion
 *(~5–7 pages — slightly expanded given the narrower experimental scope, to carry the honesty load)*
 
-7.1 **Interpretation of Results** — synthesize 6.1–6.5 into your one-line thesis statement.
+7.1 **Interpretation of Results** — synthesize 6.1–6.6 into your one-line thesis statement.
 
 7.2 **Limitations** (be specific — this section is doing real work given the reduced scope):
-- Only one downstream merger evaluated (Task Arithmetic); TIES/TSV-M behavior unknown.
+- Only Task Arithmetic and TIES mergers were evaluated; TSV-M behavior unknown.
 - No self-run comparison against DARE/DELLA/KnOTS/Core Space; any literature numbers cited are not
   directly comparable due to differing setups/scale.
 - Single backbone model; cross-architecture generality (E11) untested.
@@ -199,7 +198,7 @@ possible benchmark contamination if using widely-known eval sets.
 - **A data-free tuning protocol for $\beta$** (E6): e.g. selecting $\beta$ via spectral diagnostics
   ($o_{max}$, effective rank) rather than downstream accuracy, preserving Pico's data-free property.
 - **Full comparative evaluation** against DARE/DELLA/KnOTS/Core Space under a tuned $\beta$ (E7).
-- **Merger generality**: repeat with TIES and TSV-M (E8).
+- **Merger generality**: repeat with TSV-M (E8).
 - **Numerical robustness**: conditioning stress tests and a formal edge-case suite (E9, E10).
 - **Cross-backbone validation** (E11) and **quantitative positioning** against Core Space/TSV-M/SVC
   (E12).
