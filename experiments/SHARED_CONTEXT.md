@@ -148,21 +148,21 @@ Every result file must include:
 - **Notes:** (Sub-agent to update)
 
 ### E1 Status
-- **Status:** Script Ready, Pending Lab PC Execution
-- **Notes:** `experiments/e1_equivalence/run_e1.py` is fully implemented. Waiting for user to execute it on the Lab PC (where adapters are present) to verify operator-level equivalence.
+- **Status:** Completed
+- **Notes:** `experiments/e1_equivalence/run_e1.py` executed on Lab PC (RTX 6000). Results saved to `results/e1/results.json`.
 
 ### E2 Status
-- **Status:** Pending Execution
-- **Notes:** (Sub-agent to update)
+- **Status:** Completed
+- **Notes:** Evaluations executed on Lab PC. Raw `eval_*.json` files generated for all 6 configurations (no_cal, pico, wbp across TA and TIES).
 
 ### E3 Status
-- **Status:** Script Ready, Pending Lab PC Execution
-- **Notes:** `experiments/e3_scaling/run_e3.py` is fully implemented. Waiting for user to execute it on the Lab PC (RTX 6000) and provide the results.
+- **Status:** Completed
+- **Notes:** `experiments/e3_scaling/run_e3.py` executed on Lab PC (RTX 6000). Results saved to `results/e3/results.json`.
 
 ### E4 Status
-- **Status:** Script Ready, Pending Lab PC Execution
-- **Notes:** `experiments/e4_tr_scaling/run_e4_timing.py` is fully implemented. Need user to execute the timing script on the Lab RTX 6000.
+- **Status:** Completed
+- **Notes:** `experiments/e4_tr_scaling/run_e4_timing.py` executed on Lab PC (RTX 6000). Results saved to `results/e4/timing/results.json`.
 
 ### E5 Status
-- **Status:** Script Ready, Pending Lab PC Execution
-- **Notes:** `experiments/e5_beta_sweep/run_e5.py` is fully implemented. Waiting for user to execute it on the Lab PC (RTX 6000) and provide the results.
+- **Status:** Completed (Pending Plotting)
+- **Notes:** E5 core execution ran successfully on Lab PC. The JSON extraction bug was fixed by splitting the aggregator out into `aggregate_e5.py`. Results are populated in `results/e5/results.json`. Pending user running `plot_e5.py` on Lab PC to generate the graphs.

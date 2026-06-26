@@ -15,64 +15,64 @@
     4.0
   ],
   "baselines": {
-    "no_cal_average": 0.0,
-    "pico_average": 0.0
+    "no_cal_average": 0.5683333333333334,
+    "pico_average": 0.52
   },
   "results": [
     {
-      "gsm8k": 0.0,
-      "humaneval": 0.0,
-      "finqa_exact_match": 0.0,
-      "medmcqa_accuracy": 0.0,
-      "average": 0.0,
+      "gsm8k": 0.41333333333333333,
+      "humaneval": 0.43333333333333335,
+      "finqa_exact_match": 0.5733333333333334,
+      "medmcqa_accuracy": 0.6,
+      "average": 0.505,
       "beta": 0.25
     },
     {
-      "gsm8k": 0.0,
-      "humaneval": 0.0,
-      "finqa_exact_match": 0.0,
-      "medmcqa_accuracy": 0.0,
-      "average": 0.0,
+      "gsm8k": 0.43333333333333335,
+      "humaneval": 0.44,
+      "finqa_exact_match": 0.5933333333333334,
+      "medmcqa_accuracy": 0.5933333333333334,
+      "average": 0.515,
       "beta": 0.5
     },
     {
-      "gsm8k": 0.0,
-      "humaneval": 0.0,
-      "finqa_exact_match": 0.0,
-      "medmcqa_accuracy": 0.0,
-      "average": 0.0,
+      "gsm8k": 0.43333333333333335,
+      "humaneval": 0.44,
+      "finqa_exact_match": 0.6066666666666667,
+      "medmcqa_accuracy": 0.5866666666666667,
+      "average": 0.5166666666666666,
       "beta": 0.75
     },
     {
-      "gsm8k": 0.0,
-      "humaneval": 0.0,
-      "finqa_exact_match": 0.0,
-      "medmcqa_accuracy": 0.0,
-      "average": 0.0,
+      "gsm8k": 0.4266666666666667,
+      "humaneval": 0.44,
+      "finqa_exact_match": 0.6066666666666667,
+      "medmcqa_accuracy": 0.5933333333333334,
+      "average": 0.5166666666666667,
       "beta": 1.0
     },
     {
-      "gsm8k": 0.0,
-      "humaneval": 0.0,
-      "finqa_exact_match": 0.0,
-      "medmcqa_accuracy": 0.0,
-      "average": 0.0,
+      "gsm8k": 0.44,
+      "humaneval": 0.44666666666666666,
+      "finqa_exact_match": 0.6066666666666667,
+      "medmcqa_accuracy": 0.58,
+      "average": 0.5183333333333333,
       "beta": 1.5
     },
     {
-      "gsm8k": 0.0,
-      "humaneval": 0.0,
-      "finqa_exact_match": 0.0,
-      "medmcqa_accuracy": 0.0,
-      "average": 0.0,
+      "gsm8k": 0.44,
+      "humaneval": 0.44,
+      "finqa_exact_match": 0.6066666666666667,
+      "medmcqa_accuracy": 0.5866666666666667,
+      "average": 0.5183333333333333,
       "beta": 2.0
     },
     {
-      "gsm8k": 0.0,
-      "humaneval": 0.0,
-      "finqa_exact_match": 0.0,
-      "medmcqa_accuracy": 0.0,
-      "average": 0.0,
+      "gsm8k": 0.41333333333333333,
+      "humaneval": 0.41333333333333333,
+      "finqa_exact_match": 0.6266666666666667,
+      "medmcqa_accuracy": 0.6,
+      "average": 0.5133333333333333,
       "beta": 4.0
     }
   ]
