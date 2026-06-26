@@ -1,21 +1,9 @@
 """
-E4 — Timing Grid across (T, r) — CUDA Required
-===============================================
-Platform : Lab RTX 6000 (24 GB VRAM, CUDA)
-Purpose  : Measure wall-clock time and peak GPU memory for Pico (SVD) and
-           WBP (Woodbury) across all combinations of T ∈ {2,3,4,5,6}
-           and r ∈ {8,16,32,64} using synthetic float32 matrices.
-
-Usage
------
-    python experiments/e4_tr_scaling/run_e4_timing.py
-
-Results land in ./results/e4/timing/:
-    results.json
-    speedup_heatmap.png
-    time_vs_T_r{r}.png   (one per r value)
-
-Bundle this with E3 in the same lab GPU session — it takes < 30 min.
+E4 — Timing Benchmarks vs T and r
+=================================
+Platform : Lab RTX 6000 (CUDA required)
+Purpose  : Measure wall-clock time and peak GPU memory for Pico and WBP
+           under varying number of adapters (T) and rank (r).
 """
 
 import json
@@ -25,6 +13,9 @@ import time
 from pathlib import Path
 
 import torch
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -39,47 +30,52 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-T_VALUES      = [2, 3, 4, 5, 6]
-R_VALUES      = [8, 16, 32, 64]
-D_OUT         = 4096        # representative production-scale d_out
-WARMUP_ITERS  = 5
-TIMED_ITERS   = 20
-DTYPE         = torch.float32
-SEEDS         = [42, 43, 44, 45, 46]
-RESULTS_DIR   = Path("./results/e4/timing")
-
+T_VALUES = [2, 3, 4, 5, 6]
+R_VALUES = [8, 16, 32, 64]
+D_OUT = 4096    # Representative production-scale d_out
+WARMUP_ITERS = 5
+TIMED_ITERS = 20
+DTYPE = torch.float32
+SEEDS = [42, 43, 44, 45, 46]
+RESULTS_DIR = Path("./results/e4/timing")
 
 # ---------------------------------------------------------------------------
-# Inline calibration functions (copied from E3 — no src/ import for clean timing)
+# Inline calibration functions (from E3)
 # ---------------------------------------------------------------------------
-
 def pico_calibrate(B_all: torch.Tensor, T: int) -> torch.Tensor:
-    """Pico thin-SVD path. Returns calibrated B_all (d_out, T*r)."""
+    """
+    Pico thin-SVD path.
+    Returns calibrated B_all of shape (d_out, T*r).
+    """
     U, S, Vh = torch.linalg.svd(B_all, full_matrices=False)
     S_sq = S ** 2
     s = S_sq / S_sq.sum()
     alpha = 1.0 / (1.0 + (T - 1) * s)
-    alpha_minus_1 = (alpha - 1.0).unsqueeze(0)
+    alpha_minus_1 = (alpha - 1.0).unsqueeze(0)  # shape (1, Tr) for broadcasting
     return B_all + U @ (alpha_minus_1.T * (U.T @ B_all))
 
-
 def wbp_calibrate(B_all: torch.Tensor, T: int) -> torch.Tensor:
-    """WBP Woodbury path. Returns calibrated B_all (d_out, T*r)."""
-    G = B_all.T @ B_all
+    """
+    WBP Woodbury path.
+    Returns calibrated B_all of shape (d_out, T*r).
+    """
+    G = B_all.T @ B_all                                    # (Tr, Tr)
     lam = (T - 1) / torch.trace(G)
     Tr = B_all.shape[1]
     K = torch.linalg.inv(
         torch.eye(Tr, device=B_all.device, dtype=B_all.dtype) / lam + G
-    )
+    )                                                       # (Tr, Tr)
     return B_all - B_all @ (K @ (B_all.T @ B_all))
 
-
 # ---------------------------------------------------------------------------
-# Timing harness
+# Timing harness (from E3)
 # ---------------------------------------------------------------------------
-
 def time_fn(fn, *args, warmup: int = WARMUP_ITERS, iters: int = TIMED_ITERS):
-    """Returns list of per-iteration wall-clock times (seconds), GPU-synchronized."""
+    """
+    Returns a list of per-iteration wall-clock times (seconds).
+    GPU-synchronized before stopping the clock.
+    """
+    # Warmup — not timed
     for _ in range(warmup):
         fn(*args)
     torch.cuda.synchronize()
@@ -89,201 +85,191 @@ def time_fn(fn, *args, warmup: int = WARMUP_ITERS, iters: int = TIMED_ITERS):
         torch.cuda.synchronize()
         t0 = time.perf_counter()
         fn(*args)
-        torch.cuda.synchronize()      # MANDATORY before stopping clock
+        torch.cuda.synchronize()      # MANDATORY — ensures kernel completion
         t1 = time.perf_counter()
         times.append(t1 - t0)
+
     return times
 
-
 def measure_peak_mem(fn, *args) -> int:
-    """Returns peak GPU memory allocated (bytes)."""
+    """Returns peak GPU memory allocated (bytes) during fn(*args)."""
     torch.cuda.reset_peak_memory_stats()
     torch.cuda.synchronize()
     fn(*args)
     torch.cuda.synchronize()
     return torch.cuda.max_memory_allocated()
 
-
 # ---------------------------------------------------------------------------
 # Main sweep
 # ---------------------------------------------------------------------------
-
-def run_sweep() -> list:
+def run_timing_sweep():
     results = []
 
-    for T in T_VALUES:
+    for t in T_VALUES:
         for r in R_VALUES:
-            Tr = T * r
-            log.info("T=%d  r=%2d  Tr=%3d  d_out=%d", T, r, Tr, D_OUT)
-
+            Tr = t * r
+            log.info(f"Testing T={t}, r={r}, Tr={Tr}")
+            
             pico_times_all = []
             wbp_times_all  = []
             pico_mem_all   = []
             wbp_mem_all    = []
-
+            
             for seed in SEEDS:
                 torch.manual_seed(seed)
                 B_all = torch.randn(D_OUT, Tr, dtype=DTYPE, device="cuda")
 
-                pico_iter_times = time_fn(pico_calibrate, B_all, T)
-                wbp_iter_times  = time_fn(wbp_calibrate,  B_all, T)
+                # ----- Pico timing -----
+                pico_iter_times = time_fn(pico_calibrate, B_all, t)
                 pico_times_all.extend(pico_iter_times)
+
+                # ----- WBP timing -----
+                wbp_iter_times = time_fn(wbp_calibrate, B_all, t)
                 wbp_times_all.extend(wbp_iter_times)
 
-                pico_mem_all.append(measure_peak_mem(pico_calibrate, B_all, T))
-                wbp_mem_all.append(measure_peak_mem(wbp_calibrate,  B_all, T))
-
+                # ----- Peak memory -----
+                pico_mem_all.append(measure_peak_mem(pico_calibrate, B_all, t))
+                wbp_mem_all.append(measure_peak_mem(wbp_calibrate, B_all, t))
+            
             pico_mean = statistics.mean(pico_times_all)
             pico_std  = statistics.stdev(pico_times_all)
             wbp_mean  = statistics.mean(wbp_times_all)
             wbp_std   = statistics.stdev(wbp_times_all)
             speedup   = pico_mean / wbp_mean if wbp_mean > 0 else float("nan")
-
+            
             log.info(
-                "  Pico: %.3f ms ± %.3f  |  WBP: %.3f ms ± %.3f  |  Speedup: %.2fx",
-                pico_mean * 1e3, pico_std * 1e3,
-                wbp_mean  * 1e3, wbp_std  * 1e3,
-                speedup,
+                f"  Pico: {pico_mean*1e3:.3f} ms \u00b1 {pico_std*1e3:.3f} ms | "
+                f"WBP: {wbp_mean*1e3:.3f} ms \u00b1 {wbp_std*1e3:.3f} ms | Speedup: {speedup:.2f}x"
             )
-
+            
             results.append({
-                "T":   T,
-                "r":   r,
-                "Tr":  Tr,
+                "T": t,
+                "r": r,
+                "Tr": Tr,
                 "pico": {
-                    "mean_time_s":    pico_mean,
-                    "std_time_s":     pico_std,
-                    "peak_mem_bytes": int(statistics.mean(pico_mem_all)),
+                    "mean_time_s": pico_mean,
+                    "std_time_s": pico_std,
+                    "peak_mem_bytes": int(statistics.mean(pico_mem_all))
                 },
                 "wbp": {
-                    "mean_time_s":    wbp_mean,
-                    "std_time_s":     wbp_std,
-                    "peak_mem_bytes": int(statistics.mean(wbp_mem_all)),
+                    "mean_time_s": wbp_mean,
+                    "std_time_s": wbp_std,
+                    "peak_mem_bytes": int(statistics.mean(wbp_mem_all))
                 },
-                "speedup": round(speedup, 4),
+                "speedup": speedup
             })
 
     return results
 
-
-# ---------------------------------------------------------------------------
-# Plots
-# ---------------------------------------------------------------------------
-
-def make_plots(results: list):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    import matplotlib.colors as mcolors
+def generate_plots(results):
     import numpy as np
-
-    # Build speedup matrix: rows = r values, cols = T values
-    speedup_grid = {}
-    for row in results:
-        speedup_grid[(row["T"], row["r"])] = row["speedup"]
-
-    matrix = []
-    for r in R_VALUES:
-        matrix.append([speedup_grid.get((T, r), float("nan")) for T in T_VALUES])
-
-    # ---- Speedup heatmap ----
-    fig, ax = plt.subplots(figsize=(7, 5))
-    cmap = plt.cm.RdYlGn
-    norm = mcolors.TwoSlopeNorm(vmin=0.5, vcenter=1.0, vmax=2.5)
-    im = ax.imshow(matrix, aspect="auto", cmap=cmap, norm=norm)
-    ax.set_xticks(range(len(T_VALUES)))
-    ax.set_xticklabels([str(t) for t in T_VALUES])
-    ax.set_yticks(range(len(R_VALUES)))
-    ax.set_yticklabels([str(r) for r in R_VALUES])
-    ax.set_xlabel("T (number of tasks)", fontsize=12)
-    ax.set_ylabel("r (LoRA rank)", fontsize=12)
-    ax.set_title(f"WBP Speedup over Pico (Pico time / WBP time)\nd_out={D_OUT}, RTX 6000, float32")
-    cbar = fig.colorbar(im, ax=ax)
-    cbar.set_label("Speedup (>1 = WBP faster)", fontsize=10)
-
+    
+    # 1. Speedup Heatmap
+    Z = np.zeros((len(R_VALUES), len(T_VALUES)))
     for i, r in enumerate(R_VALUES):
-        for j, T in enumerate(T_VALUES):
-            val = matrix[i][j]
-            ax.text(j, i, f"{val:.2f}×", ha="center", va="center",
-                    fontsize=9,
-                    color="white" if val < 0.8 or val > 2.0 else "black")
-
+        for j, t in enumerate(T_VALUES):
+            # Find matching result
+            res = next(item for item in results if item["T"] == t and item["r"] == r)
+            Z[i, j] = res["speedup"]
+            
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    # Use RdYlGn colormap centered at 1.0 (or symmetrically around 1.0)
+    import matplotlib.colors as mcolors
+    # Center map around 1.0
+    vmin, vmax = Z.min(), Z.max()
+    divnorm = mcolors.TwoSlopeNorm(vmin=min(vmin, 0.9), vcenter=1.0, vmax=max(vmax, 1.1))
+    
+    cax = ax.imshow(Z, origin="lower", cmap="RdYlGn", aspect="auto", norm=divnorm)
+    
+    ax.set_xticks(np.arange(len(T_VALUES)))
+    ax.set_yticks(np.arange(len(R_VALUES)))
+    ax.set_xticklabels(T_VALUES)
+    ax.set_yticklabels(R_VALUES)
+    ax.set_xlabel("Number of Tasks (T)", fontsize=12)
+    ax.set_ylabel("Rank (r)", fontsize=12)
+    ax.set_title("Speedup Ratio (Pico Time / WBP Time)", fontsize=14)
+    
+    cbar = fig.colorbar(cax, ax=ax)
+    cbar.set_label("Speedup (x)")
+    
+    for i in range(len(R_VALUES)):
+        for j in range(len(T_VALUES)):
+            val = Z[i, j]
+            ax.text(j, i, f"{val:.2f}x", ha="center", va="center", color="black")
+            
     plt.tight_layout()
     heatmap_path = RESULTS_DIR / "speedup_heatmap.png"
     fig.savefig(heatmap_path, dpi=300)
     plt.close(fig)
-    log.info("Speedup heatmap saved to %s", heatmap_path)
-
-    # ---- Time vs T line plots (one per r) ----
+    log.info(f"Speedup heatmap saved to {heatmap_path}")
+    
+    # 2. Absolute timing comparison (Line plots per r)
     for r in R_VALUES:
-        r_results = [row for row in results if row["r"] == r]
+        r_results = [item for item in results if item["r"] == r]
+        # Sort by T
         r_results.sort(key=lambda x: x["T"])
-        Ts          = [row["T"] for row in r_results]
-        pico_ms     = [row["pico"]["mean_time_s"] * 1e3 for row in r_results]
-        pico_std    = [row["pico"]["std_time_s"]  * 1e3 for row in r_results]
-        wbp_ms      = [row["wbp"]["mean_time_s"]  * 1e3 for row in r_results]
-        wbp_std     = [row["wbp"]["std_time_s"]   * 1e3 for row in r_results]
-
-        fig, ax = plt.subplots(figsize=(6, 4))
-        ax.errorbar(Ts, pico_ms, yerr=pico_std, label="Pico (SVD)",
-                    color="steelblue",  marker="o", capsize=4, linewidth=2)
-        ax.errorbar(Ts, wbp_ms,  yerr=wbp_std,  label="WBP (Woodbury)",
+        
+        t_vals = [res["T"] for res in r_results]
+        pico_ms = [res["pico"]["mean_time_s"] * 1e3 for res in r_results]
+        pico_std = [res["pico"]["std_time_s"] * 1e3 for res in r_results]
+        wbp_ms = [res["wbp"]["mean_time_s"] * 1e3 for res in r_results]
+        wbp_std = [res["wbp"]["std_time_s"] * 1e3 for res in r_results]
+        
+        fig, ax = plt.subplots(figsize=(7, 5))
+        ax.errorbar(t_vals, pico_ms, yerr=pico_std, label="Pico (SVD)",
+                    color="steelblue", marker="o", capsize=4, linewidth=2)
+        ax.errorbar(t_vals, wbp_ms, yerr=wbp_std, label="WBP (Woodbury)",
                     color="darkorange", marker="s", capsize=4, linewidth=2)
-        ax.set_xlabel("T (number of tasks)", fontsize=11)
-        ax.set_ylabel("Wall-clock time (ms)", fontsize=11)
-        ax.set_title(f"Time vs. T  (r={r}, d_out={D_OUT}, RTX 6000)")
-        ax.legend(fontsize=10)
+                    
+        ax.set_xlabel("Number of Tasks (T)", fontsize=12)
+        ax.set_ylabel("Wall-clock time (ms)", fontsize=12)
+        ax.set_title(f"Wall-Clock Time vs. T (r={r}, D_OUT={D_OUT}, float32)")
+        ax.legend(fontsize=11)
         ax.grid(True, linestyle="--", alpha=0.5)
-        ax.set_xticks(Ts)
+        ax.set_xticks(t_vals)
+        
         plt.tight_layout()
-        line_path = RESULTS_DIR / f"time_vs_T_r{r}.png"
-        fig.savefig(line_path, dpi=300)
+        plot_path = RESULTS_DIR / f"time_vs_T_r{r}.png"
+        fig.savefig(plot_path, dpi=300)
         plt.close(fig)
-        log.info("Line plot saved to %s", line_path)
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
+        log.info(f"Line plot for r={r} saved to {plot_path}")
 
 def main():
     if not torch.cuda.is_available():
-        log.error(
-            "CUDA is not available. run_e4_timing.py requires the Lab RTX 6000. "
-            "For the equivalence (CPU) sub-part, run run_e4_equivalence.py instead."
-        )
+        log.error("CUDA is not available. E4 Timing requires the Lab RTX 6000.")
         raise SystemExit(1)
-
+        
     device_name = torch.cuda.get_device_name(0)
-    log.info("GPU: %s", device_name)
-    log.info("E4 timing sweep: T=%s  r=%s  d_out=%d  seeds=%s",
-             T_VALUES, R_VALUES, D_OUT, SEEDS)
-
-    results = run_sweep()
-
+    log.info(f"GPU: {device_name}")
+    log.info("Starting E4 Timing Sweep...")
+    
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    
+    results = run_timing_sweep()
+    
     output = {
-        "experiment":   "E4_timing",
-        "hardware":     device_name,
-        "d_out":        D_OUT,
-        "dtype":        "float32",
+        "experiment": "E4_timing",
+        "hardware": device_name,
+        "d_out": D_OUT,
+        "dtype": "float32",
         "warmup_iters": WARMUP_ITERS,
-        "timed_iters":  TIMED_ITERS,
-        "seeds":        SEEDS,
-        "results":      results,
+        "timed_iters": TIMED_ITERS,
+        "seeds": SEEDS,
+        "results": results
     }
-    out_path = RESULTS_DIR / "results.json"
-    with open(out_path, "w") as f:
+    
+    json_path = RESULTS_DIR / "results.json"
+    with open(json_path, "w") as f:
         json.dump(output, f, indent=2)
-    log.info("Results written to %s", out_path)
-
+    log.info(f"Results written to {json_path}")
+    
     try:
-        make_plots(results)
+        generate_plots(results)
     except Exception as e:
-        log.warning("Plot generation failed: %s  (results JSON still valid)", e)
-
-    log.info("E4 timing complete.")
-
+        log.warning(f"Plot generation failed: {e}")
+        
+    log.info("E4 Timing complete.")
 
 if __name__ == "__main__":
     main()

@@ -127,6 +127,7 @@ def main():
     print("FINAL SUMMARY (All 6 Configurations)")
     print("="*60)
     print(f"{'Mode':<15} | {'GSM8K':<8} | {'HumanEv':<8} | {'MacroEcon':<9} | {'MedQA':<8}")
+    print(f"{'Mode':<15} | {'GSM8K':<8} | {'HumanEv':<8} | {'MacroEcon':<9} | {'MedQA':<8}")
     print("-"*60)
     
     for name, s in all_scores.items():

@@ -1,10 +1,8 @@
 # AGENT.md — Project Context: WBP for LoRA Merging
 
-> **Purpose of this file.** This is the single onboarding document for this project — for an AI
-> coding agent (Claude Code, Cursor, etc.) starting a new session, or a human collaborator picking
-> this up cold. Read this file first. It tells you what's already settled (don't re-derive or
-> re-litigate it) and what's still open (where your effort should actually go). Detailed material
-> lives in the companion files listed in §6 — this file is the map, not the territory.
+> **Purpose of this file.** This is the initialization document for the **MASTER AGENT**. 
+> As the Master Agent, your role is to oversee the high-level progress of the thesis, read the `experiments/SHARED_CONTEXT.md` ledger to track sub-agent progress, synthesize the results, and draft the thesis chapters in `docs/`. **You do not write code or execute scripts.** Execution is delegated to sub-agents (each handling a specific experiment E0-E5).
+> Read this file first. It tells you what's already settled and what's still open. Detailed material lives in the companion files listed in §6.
 
 ---
 
@@ -202,7 +200,7 @@ PYTHONPATH=. python experiments/e1_equivalence/run_e1.py \
 `run_e2.py` key details:
 - Loads base model **once**; patches/restores weights in-place for each calibration mode.
 - Three calibration modes: `no_cal` (plain TA average), `pico`, `wbp_beta1`.
-- Evaluates all 4 benchmarks via `evaluate.py`: GSM8K, HumanEval (subprocess sandbox), FinQA, MedMCQA.
+- Evaluates all 4 benchmarks via `evaluate.py`: GSM8K, HumanEval (subprocess sandbox), FinQA, MedQA.
 - Inference batch size ≤ 4 to stay within the ~8 GB VRAM headroom on 8B model.
 - Writes `results/e2/results.json`.
 - **Prerequisite:** Adapters downloaded from Hub to `./adapters/`.

@@ -1,3 +1,5 @@
+> **ATTENTION:** You are the **E2 Sub-Agent**. Your role is to write code and execute Phase 3 (Downstream accuracy parity). When you make progress, encounter roadblocks, or finish your task, you MUST append a status update to the `### E2 Status` section in `../SHARED_CONTEXT.md` so the Master Agent can track your work. Do not modify other agents' sections.
+
 # Agent Prompt: E2 — Downstream Accuracy Parity
 
 > **Platform:** Lab RTX 6000 (24 GB VRAM, CUDA)

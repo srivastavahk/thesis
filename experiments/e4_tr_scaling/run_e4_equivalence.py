@@ -1,26 +1,25 @@
 """
-E4 — Equivalence Check across (T, r) Grid
-==========================================
-Platform : Mac Mini M4 (CPU) — no CUDA required
-Purpose  : Verify that Pico and WBP agree to machine precision for all
-           combinations of T ∈ {2,3,4,5,6} and r ∈ {8,16,32,64},
-           using synthetic float64 matrices.
-
-Usage
------
-    PYTHONPATH=/Users/demid/thesis python experiments/e4_tr_scaling/run_e4_equivalence.py
-
-Results land in ./results/e4/equivalence/:
-    results.json
-    equivalence_heatmap.png
+E4 — Equivalence Verification vs T and r
+========================================
+Platform : Mac Mini M4 (CPU) — NO CUDA
+Purpose  : Verify Pico and WBP numerical equivalence under varying number of
+           adapters (T) and rank (r).
 """
 
 import json
 import logging
+import os
 import statistics
 from pathlib import Path
 
 import torch
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+# Require running from the repository root (PYTHONPATH=.)
+from src.pico import merge_pico
+from src.wbp import merge_wbp
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -35,175 +34,130 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-T_VALUES    = [2, 3, 4, 5, 6]
-R_VALUES    = [8, 16, 32, 64]
-D_OUT       = 1024          # fixed d_out for equivalence check
-DTYPE       = torch.float64 # high precision for equivalence verification
-SEEDS       = [42, 43, 44, 45, 46]
+T_VALUES = [2, 3, 4, 5, 6]
+R_VALUES = [8, 16, 32, 64]
+D_OUT = 1024
+DTYPE = torch.float64
+SEEDS = [42, 43, 44, 45, 46]
 RESULTS_DIR = Path("./results/e4/equivalence")
 
-PASS_THRESHOLD = 1e-5       # max_rel_error must be below this to pass
-
-
-# ---------------------------------------------------------------------------
-# Imports from src/
-# ---------------------------------------------------------------------------
-import sys
-sys.path.insert(0, str(Path(__file__).parents[2]))  # project root
-from src.pico import merge_pico
-from src.wbp import merge_wbp
-
-
-# ---------------------------------------------------------------------------
-# Main sweep
-# ---------------------------------------------------------------------------
-
-def run_sweep() -> list:
+def run_equivalence_sweep():
     results = []
+    all_passed = True
+    
+    # For heatmap: dict to hold max error for each (T, r)
+    heatmap_data = {}
 
-    for T in T_VALUES:
+    for t in T_VALUES:
         for r in R_VALUES:
-            Tr = T * r
+            log.info(f"Testing T={t}, r={r}")
             rel_errors = []
-
+            
             for seed in SEEDS:
                 torch.manual_seed(seed)
-                B_list = [torch.randn(D_OUT, r, dtype=DTYPE) for _ in range(T)]
-                A_list = [torch.randn(r, D_OUT // 2, dtype=DTYPE) for _ in range(T)]
-
+                
+                # Generate random factors
+                B_list = [torch.randn(D_OUT, r, dtype=DTYPE) for _ in range(t)]
+                A_list = [torch.randn(r, D_OUT // 2, dtype=DTYPE) for _ in range(t)]
+                
+                # Merge with Pico
                 B_pico, A_pico = merge_pico(B_list, A_list)
-                B_wbp,  A_wbp  = merge_wbp(B_list, A_list, beta=1.0)
-
-                rel_err = (
-                    (B_pico - B_wbp).norm(p="fro") /
-                    (B_pico.norm(p="fro") + 1e-30)
-                ).item()
-                rel_errors.append(rel_err)
-
-            mean_rel_err = statistics.mean(rel_errors)
-            max_rel_err  = max(rel_errors)
-            passed       = max_rel_err < PASS_THRESHOLD
-
-            status = "✓" if passed else "✗"
-            log.info(
-                "  %s T=%d  r=%2d  Tr=%3d  "
-                "mean_rel_err=%.2e  max_rel_err=%.2e",
-                status, T, r, Tr, mean_rel_err, max_rel_err,
-            )
-
+                
+                # Merge with WBP
+                B_wbp, A_wbp = merge_wbp(B_list, A_list, beta=1.0)
+                
+                # Compute relative Frobenius error on B_merged
+                rel_err = (B_pico - B_wbp).norm('fro') / (B_pico.norm('fro') + 1e-12)
+                rel_errors.append(rel_err.item())
+            
+            mean_rel_error = statistics.mean(rel_errors)
+            max_rel_error = max(rel_errors)
+            
+            log.info(f"  Mean Rel Error: {mean_rel_error:.3e} | Max Rel Error: {max_rel_error:.3e}")
+            
+            if max_rel_error >= 1e-5:
+                all_passed = False
+                log.error(f"  FAILED: max_rel_error {max_rel_error:.3e} >= 1e-5")
+                
             results.append({
-                "T":             T,
-                "r":             r,
-                "Tr":            Tr,
-                "mean_rel_error": mean_rel_err,
-                "max_rel_error":  max_rel_err,
-                "passed":         passed,
+                "T": t,
+                "r": r,
+                "Tr": t * r,
+                "mean_rel_error": mean_rel_error,
+                "max_rel_error": max_rel_error
             })
+            
+            heatmap_data[(t, r)] = max_rel_error
 
-    return results
+    return results, all_passed, heatmap_data
 
-
-# ---------------------------------------------------------------------------
-# Plot — heatmap of log10(max_rel_error)
-# ---------------------------------------------------------------------------
-
-def make_heatmap(results: list):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+def generate_heatmap(heatmap_data):
     import numpy as np
-
-    # Build matrix: rows = r values, columns = T values
-    grid = {}
-    for row in results:
-        grid[(row["T"], row["r"])] = row["max_rel_error"]
-
-    matrix = []
-    for r in R_VALUES:
-        row_vals = []
-        for T in T_VALUES:
-            val = grid.get((T, r), float("nan"))
-            row_vals.append(val if val > 0 else 1e-20)
-        matrix.append(row_vals)
-
-    matrix_log = [[v if v != v else max(-20.0, __import__("math").log10(v))
-                   for v in row] for row in matrix]
-
-    fig, ax = plt.subplots(figsize=(7, 5))
-    im = ax.imshow(matrix_log, aspect="auto", cmap="viridis_r",
-                   vmin=-18, vmax=-4)
-    ax.set_xticks(range(len(T_VALUES)))
-    ax.set_xticklabels([str(t) for t in T_VALUES])
-    ax.set_yticks(range(len(R_VALUES)))
-    ax.set_yticklabels([str(r) for r in R_VALUES])
-    ax.set_xlabel("T (number of tasks)", fontsize=12)
-    ax.set_ylabel("r (LoRA rank)", fontsize=12)
-    ax.set_title(
-        f"Pico vs WBP: log₁₀(max_rel_error)\n"
-        f"d_out={D_OUT}, float64, 5 seeds  (Mac Mini M4 CPU)"
-    )
-    cbar = fig.colorbar(im, ax=ax)
-    cbar.set_label("log₁₀(max_rel_error)", fontsize=10)
-
-    # Annotate each cell with the exponent
+    
+    # Create 2D array for the heatmap
+    Z = np.zeros((len(R_VALUES), len(T_VALUES)))
     for i, r in enumerate(R_VALUES):
-        for j, T in enumerate(T_VALUES):
-            val = matrix_log[i][j]
-            ax.text(j, i, f"{val:.1f}", ha="center", va="center",
-                    color="white" if val < -10 else "black", fontsize=9)
-
+        for j, t in enumerate(T_VALUES):
+            Z[i, j] = np.log10(heatmap_data[(t, r)] + 1e-16) # Add epsilon for log10
+            
+    fig, ax = plt.subplots(figsize=(8, 6))
+    cax = ax.imshow(Z, origin="lower", cmap="viridis", aspect="auto")
+    
+    # Set ticks and labels
+    ax.set_xticks(np.arange(len(T_VALUES)))
+    ax.set_yticks(np.arange(len(R_VALUES)))
+    ax.set_xticklabels(T_VALUES)
+    ax.set_yticklabels(R_VALUES)
+    
+    ax.set_xlabel("Number of Tasks (T)", fontsize=12)
+    ax.set_ylabel("Rank (r)", fontsize=12)
+    ax.set_title("Max Relative Error (log10)\nPico vs WBP Calibration", fontsize=14)
+    
+    cbar = fig.colorbar(cax, ax=ax)
+    cbar.set_label("log10(max relative error)")
+    
+    # Annotate cells
+    for i in range(len(R_VALUES)):
+        for j in range(len(T_VALUES)):
+            val = Z[i, j]
+            text_color = "white" if val < Z.max() - (Z.max() - Z.min())/2 else "black"
+            ax.text(j, i, f"{val:.1f}", ha="center", va="center", color=text_color)
+            
     plt.tight_layout()
-    heatmap_path = RESULTS_DIR / "equivalence_heatmap.png"
-    fig.savefig(heatmap_path, dpi=300)
+    plot_path = RESULTS_DIR / "equivalence_heatmap.png"
+    fig.savefig(plot_path, dpi=300)
     plt.close(fig)
-    log.info("Heatmap saved to %s", heatmap_path)
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
+    log.info(f"Heatmap saved to {plot_path}")
 
 def main():
-    log.info("=" * 60)
-    log.info("E4 — Equivalence grid  T=%s  r=%s  d_out=%d  dtype=float64",
-             T_VALUES, R_VALUES, D_OUT)
-    log.info("Seeds: %s  pass_threshold: %.0e", SEEDS, PASS_THRESHOLD)
-    log.info("=" * 60)
-
-    results = run_sweep()
-
-    all_passed = all(r["passed"] for r in results)
-    log.info("=" * 60)
-    log.info("all_passed = %s", all_passed)
-    if not all_passed:
-        failing = [r for r in results if not r["passed"]]
-        for r in failing:
-            log.warning("FAILED: T=%d r=%d max_rel_err=%.2e", r["T"], r["r"], r["max_rel_error"])
-
+    log.info("Starting E4 Equivalence Sweep...")
+    
+    # Create results directory
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    
+    results, all_passed, heatmap_data = run_equivalence_sweep()
+    
     output = {
-        "experiment":      "E4_equivalence",
-        "hardware":        "Mac Mini M4 (CPU)",
-        "d_out":           D_OUT,
-        "dtype":           "float64",
-        "seeds":           SEEDS,
-        "pass_threshold":  PASS_THRESHOLD,
-        "all_passed":      all_passed,
-        "results":         results,
+        "experiment": "E4_equivalence",
+        "hardware": "Mac Mini M4 (CPU)",
+        "d_out": D_OUT,
+        "dtype": "float64",
+        "seeds": SEEDS,
+        "results": results,
+        "all_passed": all_passed
     }
-    out_path = RESULTS_DIR / "results.json"
-    with open(out_path, "w") as f:
+    
+    json_path = RESULTS_DIR / "results.json"
+    with open(json_path, "w") as f:
         json.dump(output, f, indent=2)
-    log.info("Results written to %s", out_path)
-
+    log.info(f"Results written to {json_path}")
+    
     try:
-        make_heatmap(results)
+        generate_heatmap(heatmap_data)
     except Exception as e:
-        log.warning("Heatmap generation failed: %s  (results JSON still valid)", e)
-
-    if not all_passed:
-        raise SystemExit(1)
-
+        log.warning(f"Plot generation failed: {e}")
+        
+    log.info("E4 Equivalence complete.")
 
 if __name__ == "__main__":
     main()

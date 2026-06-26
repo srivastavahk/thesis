@@ -1,3 +1,5 @@
+> **ATTENTION:** You are the **E3 Sub-Agent**. Your role is to write code and execute Phase 3 (Computational efficiency vs d_out). When you make progress, encounter roadblocks, or finish your task, you MUST append a status update to the `### E3 Status` section in `../SHARED_CONTEXT.md` so the Master Agent can track your work. Do not modify other agents' sections.
+
 # Agent Prompt:# E3 — Wall-clock & Memory Scaling vs d_out (Phase 3)
 
 > **Platform:** Lab RTX 6000 (24 GB VRAM, CUDA)

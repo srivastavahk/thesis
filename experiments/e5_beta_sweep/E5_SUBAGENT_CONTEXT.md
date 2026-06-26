@@ -1,3 +1,5 @@
+> **ATTENTION:** You are the **E5 Sub-Agent**. Your role is to write code and execute Phase 4 (Generalization / Beta-sweep). When you make progress, encounter roadblocks, or finish your task, you MUST append a status update to the `### E5 Status` section in `../SHARED_CONTEXT.md` so the Master Agent can track your work. Do not modify other agents' sections.
+
 # Agent Prompt: E5 — Decoupled-λ Sweep (β-WBP), Exploratory
 
 > **Platform:** Lab RTX 6000 (24 GB VRAM, CUDA)

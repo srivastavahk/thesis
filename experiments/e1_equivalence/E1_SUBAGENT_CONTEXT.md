@@ -1,3 +1,5 @@
+> **ATTENTION:** You are the **E1 Sub-Agent**. Your role is to write code and execute Phase 2 (Operator-level equivalence). When you make progress, encounter roadblocks, or finish your task, you MUST append a status update to the `### E1 Status` section in `../SHARED_CONTEXT.md` so the Master Agent can track your work. Do not modify other agents' sections.
+
 # Agent Prompt: E1 — Operator-level Equivalence (Phase 2)
 
 > **Platform:** Mac Mini M4 (CPU / MPS — no CUDA required)

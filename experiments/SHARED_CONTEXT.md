@@ -125,7 +125,7 @@ Every result file must include:
   - Math: GSM8K (exact match, full test set ~1319 examples)
   - Coding: HumanEval (pass@1, 164 problems)
   - Finance: FinQA subset or Fin-bench (exact match)
-  - Medical: MedMCQA (accuracy, sample 1000 from validation)
+  - Medical: MedQA (accuracy, sample 1000 from validation)
 
 ---
 
@@ -135,3 +135,33 @@ Every result file must include:
 - Save results to `/Users/demid/thesis/results/<experiment_id>/`.
 - Every results file should be a self-contained JSON or CSV with metadata header.
 - Do not use `print()` for results — use Python `logging` with timestamps.
+
+---
+
+## Master / Sub-Agent Ledger
+
+> **ATTENTION SUB-AGENTS:** You are responsible for a specific experiment (E0-E5). When you achieve a milestone, encounter an error, or finish your execution, you MUST update your corresponding section below. The Master Agent will read this to track global progress and write the thesis. Do not modify other agents' sections.
+
+### E0 Status
+- **Status:** Pending Execution
+- **Notes:** (Sub-agent to update)
+
+### E1 Status
+- **Status:** Pending Execution
+- **Notes:** (Sub-agent to update)
+
+### E2 Status
+- **Status:** Pending Execution
+- **Notes:** (Sub-agent to update)
+
+### E3 Status
+- **Status:** Script Ready, Pending Lab PC Execution
+- **Notes:** `experiments/e3_scaling/run_e3.py` is fully implemented. Waiting for user to execute it on the Lab PC (RTX 6000) and provide the results.
+
+### E4 Status
+- **Status:** Scripts Implemented, Equivalence verification running, Pending Lab PC Execution for Timing
+- **Notes:** `experiments/e4_tr_scaling/run_e4_equivalence.py` and `experiments/e4_tr_scaling/run_e4_timing.py` are fully implemented. Need user to execute the timing script on the Lab RTX 6000.
+
+### E5 Status
+- **Status:** Pending Execution
+- **Notes:** (Sub-agent to update)
