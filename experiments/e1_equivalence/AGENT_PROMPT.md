@@ -21,7 +21,7 @@ Read `../SHARED_CONTEXT.md` for full mathematical background, notation, and exis
 
 #### Inputs
 - `--adapters_dir`: path to directory containing adapter subdirectories (e.g., `/Users/demid/thesis/adapters/`)
-- `--base_model`: HuggingFace model name (default: `meta-llama/Llama-3.1-8B`)
+- `--base_model`: HuggingFace model name (default: `unsloth/Meta-Llama-3.1-8B`)
 - `--output_dir`: where to save results JSON (default: `/Users/demid/thesis/results/e1/`)
 - `--dtype`: `float32` or `float64` (default: `float64` for maximum precision)
 - `--seed`: random seed (default: 42)
@@ -63,7 +63,7 @@ Read `../SHARED_CONTEXT.md` for full mathematical background, notation, and exis
      "experiment": "E1",
      "hardware": "Mac Mini M4 (CPU)",
      "dtype": "float64",
-     "base_model": "meta-llama/Llama-3.1-8B",
+     "base_model": "unsloth/Meta-Llama-3.1-8B",
      "T": 4,
      "num_layers_checked": <int>,
      "max_rel_error": <float>,

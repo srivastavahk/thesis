@@ -111,7 +111,7 @@ Every result file must include:
 
 ## Base Model & Adapter Configuration
 
-- **Base model:** `meta-llama/Llama-3.1-8B` (base, not instruct variant — plain base for cleaner task separation)
+- **Base model:** `unsloth/Meta-Llama-3.1-8B` (base, not instruct variant — plain base for cleaner task separation)
 - **LoRA rank:** r=16 (primary), r=8 (secondary check)
 - **LoRA target modules:** `q_proj`, `v_proj` in attention layers
 - **Tasks (T=4):** math, coding, finance, medical

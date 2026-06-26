@@ -38,7 +38,7 @@ This script is a direct extension of `run_e2.py`. It:
 ```bash
 python run_e5.py \
   --adapters_dir /path/to/adapters \
-  --base_model meta-llama/Llama-3.1-8B \
+  --base_model unsloth/Meta-Llama-3.1-8B \
   --output_dir /path/to/results/e5 \
   --dtype bfloat16 \
   --device cuda \
@@ -71,7 +71,7 @@ BETA_VALUES = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 4.0]
 {
   "experiment": "E5",
   "hardware": "RTX 6000 24GB",
-  "base_model": "meta-llama/Llama-3.1-8B",
+  "base_model": "unsloth/Meta-Llama-3.1-8B",
   "dtype": "bfloat16",
   "T": 4,
   "seed": 42,
@@ -106,7 +106,7 @@ BETA_VALUES = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 4.0]
 - Y-axis: Average accuracy across 4 benchmarks
 - Horizontal dashed lines for no-cal baseline and Pico (β=1) baseline
 - Mark β=1 point with a vertical dashed line labeled "Pico-equivalent"
-- Title: "WBP β sweep — Average benchmark accuracy (T=4, Llama-3.1-8B)"
+- Title: "WBP β sweep — Average benchmark accuracy (T=4, Meta-Llama-3.1-8B)"
 - Save to `./results/e5/beta_sweep_avg.png` at 300 DPI
 
 **Plot 2: Per-benchmark accuracy vs. β (4 subplots)**

@@ -11,7 +11,7 @@ Read `../SHARED_CONTEXT.md` for full mathematical background, notation, and exis
 
 **E2 Objective:** Show that WBP-merged models match Pico-merged models on downstream benchmark accuracy end-to-end — not just at the operator level. Both should also beat "no calibration" (plain Task Arithmetic).
 
-**Hardware note:** This runs on the Lab RTX 6000 (24 GB VRAM). `meta-llama/Llama-3.1-8B` at bf16 uses ~16 GB, leaving ~8 GB headroom for activations. Keep inference batch size ≤ 4 to stay within VRAM.
+**Hardware note:** This runs on the Lab RTX 6000 (24 GB VRAM). `unsloth/Meta-Llama-3.1-8B` at bf16 uses ~16 GB, leaving ~8 GB headroom for activations. Keep inference batch size ≤ 4 to stay within VRAM.
 
 ---
 
@@ -31,7 +31,7 @@ Read `../SHARED_CONTEXT.md` for full mathematical background, notation, and exis
 ```bash
 python run_e2.py \
   --adapters_dir /path/to/adapters \
-  --base_model meta-llama/Llama-3.1-8B \
+  --base_model unsloth/Meta-Llama-3.1-8B \
   --output_dir /path/to/results/e2 \
   --dtype bfloat16 \
   --device cuda \
@@ -108,7 +108,7 @@ Call `evaluate.py` functions. See `evaluate.py` spec below.
 {
   "experiment": "E2",
   "hardware": "RTX 6000 24GB",
-  "base_model": "meta-llama/Llama-3.1-8B",
+  "base_model": "unsloth/Meta-Llama-3.1-8B",
   "dtype": "bfloat16",
   "T": 4,
   "seed": 42,

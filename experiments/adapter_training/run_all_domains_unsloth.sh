@@ -29,7 +29,7 @@
 #
 # Adapters saved to:
 #   adapters/{domain}/             ← local copy always saved first
-#   HuggingFace Hub:  mml2024003/Llama-3.1-8B_{domain}
+#   HuggingFace Hub:  mml2024003/Meta-Llama-3.1-8B_{domain}
 # =============================================================================
 
 set -euo pipefail   # exit on error, unset variables, pipe failures
@@ -216,7 +216,7 @@ echo ""
     echo "Adapter locations:"
     for domain in "${DOMAINS[@]}"; do
         echo "  ${domain}: ${PROJECT_ROOT}/adapters/${domain}/"
-        echo "           https://huggingface.co/mml2024003/Llama-3.1-8B_${domain}"
+        echo "           https://huggingface.co/mml2024003/Meta-Llama-3.1-8B_${domain}"
     done
 } | tee "${SUMMARY_LOG}"
 

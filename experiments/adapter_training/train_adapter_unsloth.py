@@ -1,7 +1,7 @@
 """
 Adapter Training with Unsloth — Lab RTX 6000 (24 GB VRAM, CUDA)
 ================================================================
-Trains a domain-specific LoRA adapter on meta-llama/Llama-3.1-8B (bf16) using Unsloth.
+Trains a domain-specific LoRA adapter on unsloth/Meta-Llama-3.1-8B (bf16) using Unsloth.
 Run ONE domain at a time; all four domains are trained sequentially.
 
 Usage (run from project root ~/thesis/):
@@ -73,7 +73,7 @@ if hf_token:
     log.info("Logged in to HuggingFace Hub.")
 else:
     log.warning(
-        "HF_TOKEN not set. If meta-llama/Llama-3.1-8B download fails with 401, "
+        "HF_TOKEN not set. If unsloth/Meta-Llama-3.1-8B download fails with 401, "
         "export HF_TOKEN=<your token> and retry."
     )
 
@@ -414,7 +414,7 @@ def train(domain: str):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Train a domain-specific LoRA adapter on Llama-3.1-8B using Unsloth."
+        description="Train a domain-specific LoRA adapter on Meta-Llama-3.1-8B using Unsloth."
     )
     parser.add_argument(
         "--domain",

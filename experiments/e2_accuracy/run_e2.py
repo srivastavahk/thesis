@@ -9,7 +9,7 @@ Usage
 -----
     PYTHONPATH=/path/to/thesis python experiments/e2_accuracy/run_e2.py \
         --adapters_dir ./adapters \
-        --base_model   meta-llama/Llama-3.1-8B \
+        --base_model   unsloth/Meta-Llama-3.1-8B \
         --output_dir   ./results/e2 \
         --dtype        float16 \
         --device       cuda \
@@ -237,7 +237,7 @@ def run_eval_suite(model, tokenizer, seed: int) -> dict:
 def parse_args():
     parser = argparse.ArgumentParser(description="E2 — Downstream accuracy parity (Pico vs WBP).")
     parser.add_argument("--adapters_dir", type=Path, default=Path("./adapters"))
-    parser.add_argument("--base_model",   type=str,  default="meta-llama/Llama-3.1-8B")
+    parser.add_argument("--base_model",   type=str,  default="unsloth/Meta-Llama-3.1-8B")
     parser.add_argument("--output_dir",   type=Path, default=Path("./results/e2"))
     parser.add_argument("--dtype",        type=str,  default="float16",
                         choices=["bfloat16", "float16", "float32"])

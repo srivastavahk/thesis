@@ -10,7 +10,7 @@ Usage
 -----
     PYTHONPATH=/path/to/thesis python experiments/e5_beta_sweep/run_e5.py \
         --adapters_dir  ./adapters \
-        --base_model    meta-llama/Llama-3.1-8B \
+        --base_model    unsloth/Meta-Llama-3.1-8B \
         --output_dir    ./results/e5 \
         --dtype         bfloat16 \
         --device        cuda \
@@ -111,7 +111,7 @@ def run_eval_suite(model, tokenizer, seed: int) -> dict:
 def parse_args():
     parser = argparse.ArgumentParser(description="E5 — β sweep for WBP.")
     parser.add_argument("--adapters_dir",     type=Path, default=Path("./adapters"))
-    parser.add_argument("--base_model",       type=str,  default="meta-llama/Llama-3.1-8B")
+    parser.add_argument("--base_model",       type=str,  default="unsloth/Meta-Llama-3.1-8B")
     parser.add_argument("--output_dir",       type=Path, default=Path("./results/e5"))
     parser.add_argument("--dtype",            type=str,  default="float16",
                         choices=["bfloat16", "float16", "float32"])
@@ -311,7 +311,7 @@ def _make_plots(sweep_results: list, baselines: dict, output_dir: Path):
     ax.axvline(1.0, color="steelblue", linestyle=":", linewidth=1.2, alpha=0.7, label="Pico-equivalent (β=1)")
     ax.set_xlabel("β", fontsize=12)
     ax.set_ylabel("Average accuracy (4 benchmarks)", fontsize=12)
-    ax.set_title("WBP β sweep — Average benchmark accuracy\n(T=4, Llama-3.1-8B, RTX 6000)")
+    ax.set_title("WBP β sweep — Average benchmark accuracy\n(T=4, Meta-Llama-3.1-8B, RTX 6000)")
     ax.legend(fontsize=10)
     ax.grid(True, linestyle="--", alpha=0.4)
     plt.tight_layout()
@@ -340,7 +340,7 @@ def _make_plots(sweep_results: list, baselines: dict, output_dir: Path):
         ax.set_ylabel("Score", fontsize=9)
         ax.set_xlabel("β", fontsize=9)
         ax.grid(True, linestyle="--", alpha=0.4)
-    plt.suptitle("WBP β sweep — Per-benchmark accuracy (T=4, Llama-3.1-8B)", fontsize=12, y=1.01)
+    plt.suptitle("WBP β sweep — Per-benchmark accuracy (T=4, Meta-Llama-3.1-8B)", fontsize=12, y=1.01)
     plt.tight_layout()
     p2 = output_dir / "beta_sweep_per_benchmark.png"
     fig.savefig(p2, dpi=300, bbox_inches="tight")

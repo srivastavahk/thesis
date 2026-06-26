@@ -291,7 +291,7 @@ def parse_args():
     parser.add_argument(
         "--base_model",
         type=str,
-        default="meta-llama/Llama-3.1-8B",
+        default="unsloth/Meta-Llama-3.1-8B",
         help="HuggingFace model name (informational only — model is NOT loaded).",
     )
     parser.add_argument(

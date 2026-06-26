@@ -155,12 +155,12 @@ The final dense update is `B_merged @ A_merged`.
 | `experiments/adapter_training/train_adapter.py` | **Lab RTX 6000 (CUDA)** | ✅ Written, not yet run |
 
 `train_adapter.py` key details:
-- Trains `meta-llama/Llama-3.1-8B` with plain bf16 LoRA (`r=16`, `lora_alpha=32`, targets `q_proj`/`v_proj`).
+- Trains `unsloth/Meta-Llama-3.1-8B` with plain bf16 LoRA (`r=16`, `lora_alpha=16`, targets `q_proj`/`v_proj`).
 - Accepts `--domain {math,coding,finance,medical}`. Run four times sequentially.
 - Uses FlashAttention-2 (with graceful fallback), `paged_adamw_8bit`, gradient checkpointing.
 - **Pushes trained adapter directly to HuggingFace Hub** after local save.
   - Username: `mml2024003`
-  - Repo name: `mml2024003/Llama-3.1-8B_{domain}` (e.g. `mml2024003/Llama-3.1-8B_math`)
+  - Repo name: `mml2024003/Meta-Llama-3.1-8B_{domain}` (e.g. `mml2024003/Meta-Llama-3.1-8B_math`)
   - Visibility: private by default (`HF_REPO_PRIVATE = True` at top of file)
   - Requires `HF_TOKEN` env var with **write** permissions.
 - Saves `adapters/{domain}/adapter_meta.json` locally and uploads it to the Hub repo.
@@ -209,7 +209,7 @@ PYTHONPATH=. python experiments/e1_equivalence/run_e1.py \
 Run command:
 ```bash
 PYTHONPATH=. python experiments/e2_accuracy/run_e2.py \
-  --adapters_dir ./adapters --base_model meta-llama/Llama-3.1-8B \
+  --adapters_dir ./adapters --base_model unsloth/Meta-Llama-3.1-8B \
   --output_dir ./results/e2 --dtype bfloat16 --device cuda --seed 42
 ```
 
@@ -381,12 +381,12 @@ PYTHONPATH=. python experiments/e5_beta_sweep/run_e5.py \
    | `run_e1.py`, `run_e4_equivalence.py` | Mac Mini M4 (CPU) |
    | `train_adapter.py`, `run_e2.py`, `run_e3.py`, `run_e4_timing.py`, `run_e5.py` | Lab RTX 6000 (CUDA) |
 9. **HuggingFace identity:** username `mml2024003`. Adapters are pushed automatically by
-   `train_adapter.py` to `mml2024003/Llama-3.1-8B_{domain}`. To pull them to Mac Mini:
+   `train_adapter_unsloth.py` to `mml2024003/Meta-Llama-3.1-8B_{domain}`. To pull them to Mac Mini:
    ```bash
-   huggingface-cli download mml2024003/Llama-3.1-8B_math    --local-dir ./adapters/math
-   huggingface-cli download mml2024003/Llama-3.1-8B_coding  --local-dir ./adapters/coding
-   huggingface-cli download mml2024003/Llama-3.1-8B_finance --local-dir ./adapters/finance
-   huggingface-cli download mml2024003/Llama-3.1-8B_medical --local-dir ./adapters/medical
+   huggingface-cli download mml2024003/Meta-Llama-3.1-8B_math    --local-dir ./adapters/math
+   huggingface-cli download mml2024003/Meta-Llama-3.1-8B_coding  --local-dir ./adapters/coding
+   huggingface-cli download mml2024003/Meta-Llama-3.1-8B_finance --local-dir ./adapters/finance
+   huggingface-cli download mml2024003/Meta-Llama-3.1-8B_medical --local-dir ./adapters/medical
    ```
 
 ---
