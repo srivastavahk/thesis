@@ -18,8 +18,8 @@
   "passed": true,
   "verdict": "PASS \u2014 max_rel_error < 1e-5 (excellent)",
   "seed": 42,
-  "load_time_s": 0.12,
-  "check_time_s": 0.95,
+  "load_time_s": 0.11,
+  "check_time_s": 0.78,
   "per_layer_results": [
     {
       "layer": "base_model.model.model.layers.0.self_attn.q_proj",
