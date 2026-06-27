@@ -6,6 +6,7 @@ logs/
 
 # Project specific folders
 adapters/
+merged-adapters-bak/
 
 # Python caching
 __pycache__/
