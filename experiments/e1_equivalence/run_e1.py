@@ -237,7 +237,7 @@ def check_layer(
         "mean_abs_error": mean_abs_error,
         "rel_error":      rel_error,       # Frobenius relative error
         "max_rel_error":  rel_error,       # kept for compatibility with README spec
-        "abs_err_tensor": abs_err.cpu().numpy()
+        "diff_tensor":    (B_wbp - B_pico).cpu().numpy()
     }
 
 
@@ -370,7 +370,7 @@ def main():
     t_check_start = time.perf_counter()
     worst_layer = None
     worst_rel_error = -1.0
-    worst_abs_err_tensor = None
+    worst_diff_tensor = None
 
     for i, (layer_key, tensors) in enumerate(sorted(layer_map.items())):
         result = check_layer(layer_key, tensors["B"], tensors["A"])
@@ -379,9 +379,9 @@ def main():
         if result["rel_error"] > worst_rel_error:
             worst_rel_error = result["rel_error"]
             worst_layer = layer_key
-            worst_abs_err_tensor = result.pop("abs_err_tensor")
+            worst_diff_tensor = result.pop("diff_tensor")
         else:
-            result.pop("abs_err_tensor")
+            result.pop("diff_tensor")
 
         per_layer_results.append(result)
 
@@ -461,13 +461,21 @@ def main():
     # ------------------------------------------------------------------
     # 6. Plot Heatmap of the Worst Layer
     # ------------------------------------------------------------------
-    if worst_abs_err_tensor is not None:
+    if worst_diff_tensor is not None:
         log.info("Generating heatmap for worst layer: %s (rel_error=%.2e)", worst_layer, worst_rel_error)
         plt.figure(figsize=(10, 8))
-        # Use vmax to bound outliers if any, or just use the raw matrix
-        im = plt.imshow(worst_abs_err_tensor, aspect='auto', cmap='viridis')
-        plt.colorbar(im, label='Absolute Difference')
-        plt.title(f"Absolute Difference (Pico vs WBP)\nLayer: {worst_layer}")
+        
+        import copy
+        cmap = copy.copy(plt.get_cmap('RdBu'))
+        cmap.set_over('black')
+        cmap.set_under('black')
+        
+        # Use 1e-5 as threshold since max_rel_error < 1e-5 is "excellent"
+        threshold = 1e-5
+        
+        im = plt.imshow(worst_diff_tensor, aspect='auto', cmap=cmap, vmin=-threshold, vmax=threshold)
+        plt.colorbar(im, label='Raw Difference (B_wbp - B_pico)')
+        plt.title(f"Difference Heatmap (WBP - Pico)\nLayer: {worst_layer}")
         plt.xlabel("Tr (Rank Dimension)")
         plt.ylabel("d_out (Output Dimension)")
         
