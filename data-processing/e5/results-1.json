@@ -2,7 +2,7 @@
   "experiment": "E5",
   "hardware": "RTX 6000 24GB",
   "base_model": "unsloth/Meta-Llama-3.1-8B",
-  "dtype": "float16",
+  "dtype": "bfloat16",
   "T": 4,
   "seed": 42,
   "beta_values": [

@@ -28,6 +28,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import torch
+import matplotlib.pyplot as plt
+import numpy as np
 
 # ---------------------------------------------------------------------------
 # Logging setup — must happen before any other imports that log
@@ -235,6 +237,7 @@ def check_layer(
         "mean_abs_error": mean_abs_error,
         "rel_error":      rel_error,       # Frobenius relative error
         "max_rel_error":  rel_error,       # kept for compatibility with README spec
+        "abs_err_tensor": abs_err.cpu().numpy()
     }
 
 
@@ -365,8 +368,21 @@ def main():
     per_layer_results = []
 
     t_check_start = time.perf_counter()
+    worst_layer = None
+    worst_rel_error = -1.0
+    worst_abs_err_tensor = None
+
     for i, (layer_key, tensors) in enumerate(sorted(layer_map.items())):
         result = check_layer(layer_key, tensors["B"], tensors["A"])
+        
+        # Track worst layer
+        if result["rel_error"] > worst_rel_error:
+            worst_rel_error = result["rel_error"]
+            worst_layer = layer_key
+            worst_abs_err_tensor = result.pop("abs_err_tensor")
+        else:
+            result.pop("abs_err_tensor")
+
         per_layer_results.append(result)
 
         # Progress log every 8 layers to avoid flooding the console
@@ -441,6 +457,24 @@ def main():
     log.info("Results written to %s", out_path)
     log.info("Summary: passed=%s  max_rel_error=%.2e  layers=%d  T=%d",
              passed, max_rel_error, len(per_layer_results), T)
+
+    # ------------------------------------------------------------------
+    # 6. Plot Heatmap of the Worst Layer
+    # ------------------------------------------------------------------
+    if worst_abs_err_tensor is not None:
+        log.info("Generating heatmap for worst layer: %s (rel_error=%.2e)", worst_layer, worst_rel_error)
+        plt.figure(figsize=(10, 8))
+        # Use vmax to bound outliers if any, or just use the raw matrix
+        im = plt.imshow(worst_abs_err_tensor, aspect='auto', cmap='viridis')
+        plt.colorbar(im, label='Absolute Difference')
+        plt.title(f"Absolute Difference (Pico vs WBP)\nLayer: {worst_layer}")
+        plt.xlabel("Tr (Rank Dimension)")
+        plt.ylabel("d_out (Output Dimension)")
+        
+        heatmap_path = args.output_dir / "worst_layer_diff_heatmap.png"
+        plt.savefig(heatmap_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        log.info("Heatmap saved to %s", heatmap_path)
 
     # Exit with non-zero code on failure so CI / shell scripts can detect it
     if not passed:
