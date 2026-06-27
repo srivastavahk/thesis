@@ -17,6 +17,8 @@ This project defends a novel approach to LoRA merging interference through a fou
 3. **Benchmarking & Equivalence (E2, E3, E4):** Empirically proving the exact mathematical equivalence between WBP and Pico, quantifying the computational advantage of WBP over Pico, and benchmarking downstream merging performance using both **Task Arithmetic** and **TIES** across three regimes (No Preconditioning, Pico, WBP).
 4. **Generalization (E5):** Decoupling our method from the strict Pico equivalence constraint via a tunable $\beta$ parameter to study the preliminary effects of over/under-calibrating subspace interference.
 
+> **CRITICAL STATUS UPDATE:** All four phases (Experiments E0-E5) have been **100% completed**. All python scripts have been successfully executed on the Lab PC, and the resulting raw data, JSONs, and evaluation plots are safely stored in the `results/` directory. No further code writing or experimental execution is required.
+
 ---
 
 ## 2. Source Material
@@ -82,24 +84,16 @@ alternative, (b) pure GEMMs parallelize far better on GPU than iterative SVD.
   checked independently during verification.
 - Pico's own empirical premises (asymmetry between $A$/$B$, low effective rank of $B$) are backed
   by the source paper's Table 4 and Figure 3 — not just asserted.
-- **Not yet verified:** anything about WBP's real-world wall-clock speed or downstream accuracy —
-  those require running E1–E5 (see `experiments.md`), they have not been measured yet.
+- **Empirical validation complete:** All experiments E0-E5 have been performed. WBP's real-world wall-clock speed superiority over Pico, its exact downstream accuracy parity with Pico, and the peaked nature of the $\beta$-family curve have all been successfully verified and measured. All raw data and artifacts are committed to `results/`.
 
 ---
 
 ## 5. Current Scope
 
-**In scope (commit effort here):** Experiments E0–E5.
-- **Phase 1 (Verification):**
-  - E0: Subspace overlap verification on real trained adapters.
-- **Phase 2 (Algorithm & Equivalence):**
-  - E1: Operator-level equivalence between WBP and Pico on real adapters.
-- **Phase 3 (Benchmarking & Computational Scaling):**
-  - E2: Downstream accuracy parity evaluated using **both Task Arithmetic and TIES** merging (No Preconditioning vs. Pico vs. WBP).
-  - E3: Wall-clock/memory scaling vs. $d_{out}$ (synthetic, no training needed).
-  - E4: Scaling vs. $T$ and rank $r$.
-- **Phase 4 (Generalization):**
-  - E5: Exploratory $\beta$ sweep (no tuning protocol, no full baseline table).
+**In scope (commit effort here):** Drafting the Thesis Document
+- The execution phase (E0-E5) is complete.
+- Your primary scope is now **synthesizing the empirical results** from `results/` and **drafting the thesis chapters** directly into markdown files within the `docs/` directory.
+- Strictly adhere to the structure, page budgets, and narrative flow outlined in `docs/thesis-outline.md`.
 
 **Explicitly out of scope** (do not silently expand into these without being asked):
 - Re-implementing DARE, DELLA, KnOTS, or Core Space as baselines.

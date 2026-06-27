@@ -1,0 +1,89 @@
+{
+  "experiment": "E3",
+  "hardware": "Quadro RTX 6000",
+  "dtype": "float32",
+  "T": 4,
+  "r": 16,
+  "Tr": 64,
+  "warmup_iters": 5,
+  "timed_iters": 20,
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "results": [
+    {
+      "d_out": 512,
+      "pico": {
+        "mean_time_s": 0.002266928018652834,
+        "std_time_s": 0.0002839509322316583,
+        "peak_mem_bytes": 12076544
+      },
+      "wbp": {
+        "mean_time_s": 0.0004171017583576031,
+        "std_time_s": 6.863601776659692e-05,
+        "peak_mem_bytes": 8946176
+      },
+      "speedup": 5.435
+    },
+    {
+      "d_out": 1024,
+      "pico": {
+        "mean_time_s": 0.0016947602599975654,
+        "std_time_s": 0.00017278562922071978,
+        "peak_mem_bytes": 12469760
+      },
+      "wbp": {
+        "mean_time_s": 0.0003881606992217712,
+        "std_time_s": 5.048223870220844e-06,
+        "peak_mem_bytes": 9339392
+      },
+      "speedup": 4.3661
+    },
+    {
+      "d_out": 2048,
+      "pico": {
+        "mean_time_s": 0.0017683400999521837,
+        "std_time_s": 0.0003605368108680035,
+        "peak_mem_bytes": 13256192
+      },
+      "wbp": {
+        "mean_time_s": 0.00038882147084223106,
+        "std_time_s": 3.8265136120975996e-05,
+        "peak_mem_bytes": 10125824
+      },
+      "speedup": 4.5479
+    },
+    {
+      "d_out": 4096,
+      "pico": {
+        "mean_time_s": 0.0018305404420243575,
+        "std_time_s": 0.0002227501021860853,
+        "peak_mem_bytes": 17336832
+      },
+      "wbp": {
+        "mean_time_s": 0.0003879936004523188,
+        "std_time_s": 4.273499806960576e-05,
+        "peak_mem_bytes": 11698688
+      },
+      "speedup": 4.718
+    },
+    {
+      "d_out": 8192,
+      "pico": {
+        "mean_time_s": 0.0021302738995291294,
+        "std_time_s": 0.00021673339335432227,
+        "peak_mem_bytes": 25725440
+      },
+      "wbp": {
+        "mean_time_s": 0.00039155652892077343,
+        "std_time_s": 3.716710744840188e-05,
+        "peak_mem_bytes": 14844416
+      },
+      "speedup": 5.4405
+    }
+  ]
+}

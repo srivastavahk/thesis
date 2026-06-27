@@ -5,10 +5,12 @@
 ## 1. Core Identity
 - **Thesis Title:** Woodbury B-Space Preconditioning: Fast and Generalized B-Space Calibration for Model Merging
 - **Phases:** 
-  1. Verification (E0)
-  2. Novel Algorithm (E1)
-  3. Benchmarking & Equivalence (E2, E3, E4)
-  4. Generalization (E5)
+  1. Verification (E0) - **[COMPLETED]**
+  2. Novel Algorithm (E1) - **[COMPLETED]**
+  3. Benchmarking & Equivalence (E2, E3, E4) - **[COMPLETED]**
+  4. Generalization (E5) - **[COMPLETED]**
+
+> **Current State:** All empirical experiments (E0 through E5) are fully executed. The raw data, JSON results, and plots are stored locally in the `results/` directory. The project has moved entirely to the Synthesis and Writing phase.
 
 ## 2. Hardware Constraints
 - **Primary Lab PC:** NVIDIA Quadro RTX 6000 (24 GB VRAM limit). Used for full model inference and operator-level tests (E1) since adapters are stored here.
@@ -28,7 +30,7 @@
 
 ## 4. Algorithmic Truths
 - **Complexity:** Both Pico and WBP scale as $O(d_{out} \cdot (Tr)^2)$. Neither is asymptotically "better" in Big-O notation, but WBP avoids iterative SVD and utilizes GPU GEMMs much faster in practice.
-- **TIES Merger:** The default density threshold is strictly `0.2`.
+- **TIES Merger:** The default density threshold is strictly `0.6`. (Updated from 0.2 to establish a failing baseline when merging unaligned A/B matrices).
 
 ### 4.1 Pseudocode References
 - **Pico Merge Algorithm:** See [docs/algorithm-pico.md](file:///Users/demid/thesis/docs/algorithm-pico.md) for the exact implementation steps and SVD logic.

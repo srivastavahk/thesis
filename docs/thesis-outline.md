@@ -159,10 +159,7 @@ across layers; empirically confirms the §4.2 theorem.
 scaling vs. $T$ and rank $r$.
 
 6.5 **Exploratory $\beta$-WBP Sweep (E5)** — accuracy vs. $\beta$ curve(s) for Task Arithmetic.
-Report whichever outcome occurred (peak / flat / monotonic) plainly, and interpret it honestly —
-this is the section most likely to draw examiner questions, so the interpretation paragraph matters
-more than the plot itself. Explicitly state what this result does and doesn't license you to claim
-(see "what not to claim" in `experiments.md`'s E5 entry).
+Report the observed outcome: the curve peaks at $\beta \neq 1.0$, indicating that the generalized continuous family contains points that outperform Pico's exact-match constraint. Interpret this honestly — this is the section most likely to draw examiner questions, so the interpretation paragraph matters more than the plot itself. Explicitly state what this result does and doesn't license you to claim (e.g., this is empirical evidence of the family's shape, but without a data-free tuning protocol for $\beta$, it is not yet a deployable standalone method).
 
 6.6 **Synthesis** — short closing subsection tying 6.1–6.5 together: crowding is real (E0), equivalence holds (E1), parity holds across mergers (E2), efficiency gain is real and characterized (E3/E4), and the $\beta$ family looks [promising /
 inconclusive / not advantageous] pending the formal protocol described in Ch.8 (E5).

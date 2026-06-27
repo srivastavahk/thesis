@@ -1,0 +1,62 @@
+{
+  "q_proj": [
+    {
+      "rank": 8,
+      "n_pairs": 8,
+      "mean_O_A": 0.0151,
+      "mean_O_B": 0.0574,
+      "gap": 0.0423
+    },
+    {
+      "rank": 16,
+      "n_pairs": 8,
+      "mean_O_A": 0.0224,
+      "mean_O_B": 0.0998,
+      "gap": 0.0774
+    },
+    {
+      "rank": 32,
+      "n_pairs": 8,
+      "mean_O_A": 0.0283,
+      "mean_O_B": 0.1471,
+      "gap": 0.1188
+    },
+    {
+      "rank": 64,
+      "n_pairs": 8,
+      "mean_O_A": 0.0361,
+      "mean_O_B": 0.1887,
+      "gap": 0.1526
+    }
+  ],
+  "v_proj": [
+    {
+      "rank": 8,
+      "n_pairs": 8,
+      "mean_O_A": 0.0337,
+      "mean_O_B": 0.0439,
+      "gap": 0.0102
+    },
+    {
+      "rank": 16,
+      "n_pairs": 8,
+      "mean_O_A": 0.0325,
+      "mean_O_B": 0.0467,
+      "gap": 0.0142
+    },
+    {
+      "rank": 32,
+      "n_pairs": 8,
+      "mean_O_A": 0.0297,
+      "mean_O_B": 0.0503,
+      "gap": 0.0206
+    },
+    {
+      "rank": 64,
+      "n_pairs": 8,
+      "mean_O_A": 0.0269,
+      "mean_O_B": 0.0571,
+      "gap": 0.0302
+    }
+  ]
+}
